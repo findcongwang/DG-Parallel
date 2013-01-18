@@ -1,0 +1,103 @@
+1>------ Build started: Project: dg, Configuration: Debug Win32 ------
+1>Compiling...
+1>DGAnalysis.cc
+1>c:\dg\dganalysis.cc(34) : warning C4996: 'fopen' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(234) : see declaration of 'fopen'
+1>        Message: 'This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(42) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(43) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(44) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(46) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(49) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(51) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(54) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(59) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(62) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(63) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(64) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(65) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(66) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(67) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(68) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(69) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(70) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(71) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(72) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(73) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(74) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(75) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(76) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(77) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(78) : warning C4996: 'sscanf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(311) : see declaration of 'sscanf'
+1>        Message: 'This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(327) : warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+1>c:\dg\dganalysis.cc(354) : warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+1>c:\dg\dganalysis.cc(370) : warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+1>c:\dg\dganalysis.cc(470) : warning C4996: 'sprintf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(345) : see declaration of 'sprintf'
+1>        Message: 'This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(471) : warning C4996: 'sprintf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(345) : see declaration of 'sprintf'
+1>        Message: 'This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(485) : warning C4996: 'sprintf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(345) : see declaration of 'sprintf'
+1>        Message: 'This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(486) : warning C4996: 'sprintf' was declared deprecated
+1>        c:\program files\microsoft visual studio 8\vc\include\stdio.h(345) : see declaration of 'sprintf'
+1>        Message: 'This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_DEPRECATE. See online help for details.'
+1>c:\dg\dganalysis.cc(521) : warning C4244: 'initializing' : conversion from 'double' to 'int', possible loss of data
+1>Linking...
+1>LINK : warning LNK4076: invalid incremental status file '.\Run\dg.ilk'; linking nonincrementally
+1>Embedding manifest...
+1>Build log was saved at "file://c:\DG\Debug\BuildLog.htm"
+1>dg - 0 error(s), 35 warning(s)
+========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========

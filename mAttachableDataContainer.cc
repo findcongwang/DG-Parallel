@@ -1,0 +1,16 @@
+//////////////////////////////////////////////////////////////////////
+#include "mAttachableDataContainer.h"
+//////////////////////////////////////////////////////////////////////
+
+void mAttachableDataContainer::set(int c, mAttachableData *v)
+{
+  tab[c] = v;
+}
+
+void mAttachableDataContainer::del(int c)
+{
+  tab.erase(c);
+}
+
+
+

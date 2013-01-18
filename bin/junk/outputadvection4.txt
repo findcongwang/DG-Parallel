@@ -1,0 +1,37 @@
+Script started on Tue 08 Jan 2013 09:40:04 AM EST
+theperv@theperv-Vostro-2420:~/Downloads/DG/bin$ ./dg advection4.msh 4 1
+reading the mesh ...
+9 nodes
+12 elms
+Mesh read in 0.000000 seconds
+creating connectivities ...
+Edges created in 0.000000e+00 seconds
+Connections created in 0.000000e+00 seconds
+4 cells 
+12 boundaries ...
+DG begins ...
+Volume cells created in 0.000000e+00 sec 
+Boundary cells created in 0.000000e+00 sec 
+dg running -- final time = 0.200000...
+Error in density L1 norm 2.497458e-01
+Error in density Linf norm 4.148596e-01
+4 12 iter      1 dt  2.50000E-02 T  2.50000E-02 ||rhs|| =   7.71925E-02 ||Erhs|| = 0.00000E+00 cpu  1.00000E-02 cpu(ts) =  1.00000E-02 cpuleft =  7.00000E-02
+Error in density Linf norm 4.495077e-01
+4 12 iter      2 dt  2.50000E-02 T  5.00000E-02 ||rhs|| =   6.05817E-02 ||Erhs|| = 0.00000E+00 cpu  1.00000E-02 cpu(ts) =  0.00000E+00 cpuleft =  0.00000E+00
+Error in density Linf norm 4.772655e-01
+4 12 iter      3 dt  2.50000E-02 T  7.50000E-02 ||rhs|| =   5.32613E-02 ||Erhs|| = 0.00000E+00 cpu  1.00000E-02 cpu(ts) =  0.00000E+00 cpuleft =  0.00000E+00
+Error in density Linf norm 4.975285e-01
+4 12 iter      4 dt  2.50000E-02 T  1.00000E-01 ||rhs|| =   4.89629E-02 ||Erhs|| = 0.00000E+00 cpu  1.00000E-02 cpu(ts) =  0.00000E+00 cpuleft =  0.00000E+00
+Error in density Linf norm 5.116242e-01
+4 12 iter      5 dt  2.50000E-02 T  1.25000E-01 ||rhs|| =   4.43555E-02 ||Erhs|| = 0.00000E+00 cpu  1.00000E-02 cpu(ts) =  0.00000E+00 cpuleft =  0.00000E+00
+Error in density Linf norm 5.214104e-01
+4 12 iter      6 dt  2.50000E-02 T  1.50000E-01 ||rhs|| =   3.87791E-02 ||Erhs|| = 0.00000E+00 cpu  1.00000E-02 cpu(ts) =  0.00000E+00 cpuleft =  0.00000E+00
+Error in density Linf norm 5.284442e-01
+4 12 iter      7 dt  2.50000E-02 T  1.75000E-01 ||rhs|| =   3.28321E-02 ||Erhs|| = 0.00000E+00 cpu  1.00000E-02 cpu(ts) =  0.00000E+00 cpuleft =  0.00000E+00
+Error in density Linf norm 5.337017e-01
+4 12 iter      8 dt  2.50000E-02 T  2.00000E-01 ||rhs|| =   2.74198E-02 ||Erhs|| = 0.00000E+00 cpu  1.00000E-02 cpu(ts) =  0.00000E+00 cpuleft =  0.00000E+00
+ Exact error 2.616046e-01 
+theperv@theperv-Vostro-2420:~/Downloads/DG/bin$ exit
+exit
+
+Script done on Tue 08 Jan 2013 09:40:15 AM EST

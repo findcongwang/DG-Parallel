@@ -1,0 +1,21 @@
+yes, open gmsh, choose file->merge then click the first/last image, hold shift and click the last/first image. (i don't remember one order may make it backwards)
+
+On Mon, Jan 16, 2012 at 5:27 PM, <lgk@uwaterloo.ca> wrote:
+
+    Do you merge them manually in step 1?
+
+
+    Quoting Dale Connor <dale.connor1@gmail.com>:
+
+        How to make movies - thank Janelle and david not me
+
+        1) Open gmsh and MERGE all the images you want
+        2) Open anim_mod.script - it will flash through all images and save a pile
+        of .gif images
+        3) Open a video editor such as Windows Movie Maker and import all the
+        images and make a movie out of them
+
+        -I don't actually know if these other .scripts are used but they are
+        probably here for some reason.
+
+        -Dale Connor
