@@ -51,7 +51,9 @@ mMesh::~mMesh()
     }
 }
 
-
+int mMesh::getSize(int n){
+  return allEntities.size(n);
+}
 
 Vertex *mMesh::getVertex (int theId)
 {

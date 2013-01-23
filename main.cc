@@ -1,11 +1,14 @@
 #include "mImportExport.h"
 #include "mDGMesh.h"
 #include "mEntity.h"
+#include "parallel.h"
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
 #include <map>
 #include <cstdlib>
+#include <unistd.h>
+#include <vector>
 
 extern void ShockTube (mDGMesh *theMesh, int);
 extern void OutFlow   (mDGMesh *theMesh, double mach, double angle, int wall, int);
@@ -26,8 +29,17 @@ extern void Riemann2D (mDGMesh *theMesh,int wall, int order);
 extern void TalkExample (mDGMesh *theMesh,int wall, int order);
 extern void DaleExample (mDGMesh *theMesh, int wall, int);
 
+unsigned int numCPU;
+unsigned int numThreads;
+vector<infoWrapper> threadInfo[3];
+
 int main(int argc, char *argv[])
 {
+
+  numCPU = sysconf( _SC_NPROCESSORS_ONLN );
+  numThreads = numCPU;
+  //printf("%d CPUs online\n", numCPU);
+
   mImportExport io;
   printf("reading the mesh ...\n");
   clock_t t1 = clock();

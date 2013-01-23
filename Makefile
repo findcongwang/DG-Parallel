@@ -68,8 +68,9 @@ SRC = mEntity.cc \
       GaussQuadratureTri.cc  \
       TimeIntegrator.cc	\
       BasisFunctions.cc \
-      CutCell.cc\
-      Geometry.cc
+      CutCell.cc \
+      Geometry.cc \
+      parallel.cc
 OBJ = $(SRC:.cc=.o)
 
 .SUFFIXES: .o .cc
@@ -87,8 +88,7 @@ lint:
 	$(LINT) $(CC_FLAGS) $(SRC)
 
 exe:	
-	$(CPP) $(CC_FLAGS)  main.cc lib/libmeshLib.a -o bin/dg -lc -lm
-
+	$(CPP) $(CC_FLAGS) -pthread main.cc lib/libmeshLib.a -o bin/dg -lc -lm 
 depend:
 	(sed '/^# DO NOT DELETE THIS LINE/q' Makefile && \
 	$(CPP) -MM  $(CFLAGS) ${SRC} \
@@ -232,5 +232,6 @@ CutCell.o: CutCell.cc CutCell.h DGCell.h mPoint.h mVector.h \
   mCompiler.h mEntity.h Face.h Vertex.h FieldEvaluator.h mMesh.h \
   mIdGenerator.h gEntity.h Edge.h Geometry.h
 Geometry.o: Geometry.cc Geometry.h mPoint.h DGCell.h Vertex.h mEntity.h
+parallel.o: parallel.cc parallel.h
 main.o: main.cc mImportExport.h mDGMesh.h mMesh.h mEntity.h \
   mAttachableDataContainer.h mIdGenerator.h gEntity.h

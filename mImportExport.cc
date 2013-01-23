@@ -5,9 +5,16 @@
 #include "Face.h"
 #include "mTet.h"
 #include "mException.h"
+#include "parallel.h"
 #include <stdio.h>
 #include <string.h>
 #include <cstdlib>
+#include <vector>
+
+extern unsigned int numCPU;
+extern unsigned int numThreads;
+extern vector<infoWrapper> threadInfo[4];
+
 void classifyUnclassifiedVerices (mMesh *m)
 {
   for(int i=1;i<4;i++)
@@ -53,34 +60,60 @@ int decodeGeomOrder (int geomCode)
 
 void mImportExport::import (char *fName, mMesh *theMesh)
 {
-  char ext[6];
-  strcpy(ext,fName+(strlen(fName)-4));  //it is assumed here that the name of the mesh file is in a format .***
-  if(!strcmp(ext,".sms"))
-    {
-      importSmsFile(fName, theMesh);      
-    }
-  else if(!strcmp(ext,".msh"))
-    {
-      importGmshFile(fName, theMesh);
-    }
-  else
-    {
-      char text[256];
-      sprintf(text,"unknown extension %s in file %s",ext,fName);
-      throw new mExceptionFileNotFound (__LINE__,__FILE__,text);
-    }
+	char ext[6];
+	strcpy(ext,fName+(strlen(fName)-4));  //it is assumed here that the name of the mesh file is in a format .***
+	if(!strcmp(ext,".sms"))
+	{
+		importSmsFile(fName, theMesh);      
+	}
+	else if(!strcmp(ext,".msh"))
+	{
+		importGmshFile(fName, theMesh);
+	}
+	else
+	{
+		char text[256];
+		sprintf(text,"unknown extension %s in file %s",ext,fName);
+		throw new mExceptionFileNotFound (__LINE__,__FILE__,text);
+	}
+
+  	//go define chunks
+  	for (int i = 0; i < 4; ++i)
+  	{
+ 		if(theMesh->getSize(i) == 0) continue;
+
+  		int chunkSize = theMesh->getSize(i) / numThreads;
+  		//printf("dim %d, size %d, chunkSize %d\n", i, theMesh->getSize(i), chunkSize);
+  		
+  		mMesh::iter it;
+		const mMesh::iter mesh_begin = theMesh->begin(i);
+		const mMesh::iter mesh_end = theMesh->end(i);
+
+		it = mesh_begin;
+		for (int j = 0; j < numThreads-1; ++j)
+		{
+			mMesh::iter head = it;
+			for (int k = 0; k < chunkSize; ++k)
+			{
+				++it;
+			}
+			threadInfo[i].push_back(infoWrapper(head, it, 0, 0));
+		}
+		threadInfo[i].push_back(infoWrapper(it, mesh_end, 0, 0));
+  	}
+
 }
 
 void mImportExport::importGmshFile (char *fName, mMesh *theMesh)
 {
-  FILE *f = fopen (fName,"r");
-  if(!f)throw new mExceptionFileNotFound (__LINE__,__FILE__,"impossible to import the gmsh file");
+	FILE *f = fopen (fName,"r");
+	if(!f)throw new mExceptionFileNotFound (__LINE__,__FILE__,"impossible to import the gmsh file");
 
-  char line[256];
-  while(!feof(f))
-    {
-      fscanf(f,"%s",line);
-      if(!strcmp(line,"$NOE") ||!strcmp(line,"$NOD"))  //reading vertices 
+	char line[256];
+	while(!feof(f))
+	{
+	  fscanf(f,"%s",line);
+	  if(!strcmp(line,"$NOE") ||!strcmp(line,"$NOD"))  //reading vertices 
 	{
 	  int NbNod;
 	  fscanf(f,"%d",&NbNod);             //number of vertices in the mesh
@@ -94,7 +127,7 @@ void mImportExport::importGmshFile (char *fName, mMesh *theMesh)
 	      theMesh->createVertex(iNod,x,y,z,0);
 	    }
 	}
-      if(!strcmp(line,"$ELM"))
+	  if(!strcmp(line,"$ELM"))
 	{
 	  int NbElm;
 	  fscanf(f,"%d",&NbElm);
@@ -105,7 +138,7 @@ void mImportExport::importGmshFile (char *fName, mMesh *theMesh)
 	      fscanf(f,"%d %d %d %d %d",&iElm,&iTyp,&iGrp,&iZon,&iNbNod);
 
 		  int geomOrder = decodeGeomOrder(iTyp);
-  		  vector<int> Nodvect(iNbNod,0);
+			  vector<int> Nodvect(iNbNod,0);
 
 	      switch(iTyp)
 		{
@@ -161,9 +194,9 @@ void mImportExport::importGmshFile (char *fName, mMesh *theMesh)
 		}
 	    }
 	}
-    }
-  fclose(f);
-  classifyUnclassifiedVerices (theMesh);
+	}
+	fclose(f);
+	classifyUnclassifiedVerices (theMesh);
 }
 
 // Same with streams

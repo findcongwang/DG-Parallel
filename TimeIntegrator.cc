@@ -8,13 +8,19 @@
 #include "ConservationLaw.h"
 #include "FieldEvaluator.h"
 #include "Mapping.h"
+#include "parallel.h"
 #include <stdio.h>
 #include <cstdlib>
 #include <math.h>
+#include <vector>
 
 extern double ** allocateMatrix(int n);
 extern void invmat (double **, double **, int);
 extern void freeMatrix( double **v);
+
+extern unsigned int numCPU;
+extern unsigned int numThreads;
+extern vector<infoWrapper> threadInfo[4];
 
 TimeIntegrator::TimeIntegrator(mDGMesh *m,DGLimiter *l,int NbFields, int DOF):theMesh(m),theLimiter(l),
 								     cSize(NbFields),dof(DOF)
@@ -1269,15 +1275,34 @@ double Multigrid::advanceInTime(double t, double dt)
 
 void TimeIntegrator::assembleVolume(double t)
 {
-  mMesh::iter it;
-  const mMesh::iter mesh_begin = theMesh->begin(n);
-  const mMesh::iter mesh_end=theMesh->end(n);
-  for(it = mesh_begin;it != mesh_end;++it)
+	mMesh::iter it;
+	int rc;
+	void *retval;
+
+	//fork all but last chunk
+	for (int i = 0; i < numThreads-1; ++i){
+		threadInfo[n][i]._t = t;
+		rc = pthread_create(&threadInfo[n][i]._id, NULL,
+							parallelVolume, &threadInfo[n][i]);
+		if (rc){
+			printf("ERROR: return code from pthread_create() is %d\n", rc);
+			exit(-1);
+		}
+	}
+
+	//work on last chunk
+	infoWrapper* info = &threadInfo[n][numThreads-1];
+	for(it = info->_begin; it != info->_end; ++it)
     {
-      mEntity *m = (*it);
-      DGCell *cell = (DGCell*)m->getCell();
-      cell->computeVolumeContribution(t);		
+		mEntity *m = (*it);
+		DGCell *cell = (DGCell*)m->getCell();
+		cell->computeVolumeContribution(info->_t);		
     }
+
+	//wait for all the finish
+	for (int i = 0; i < numThreads-1; ++i){
+		pthread_join(threadInfo[n][i]._id, &retval);
+	}
 }
 
 void TimeIntegrator::assembleBoundary(double t)
@@ -1341,22 +1366,53 @@ void TimeIntegrator::limit(double time)
 
 void TimeIntegrator::assembleVolume(const mMesh::iter begin,const mMesh::iter end,double t)
 {
-  for(mMesh::iter it =begin;it != end;++it)
-    {
-      mEntity *m = (*it);
-      DGCell *cell = (DGCell*)m->getCell();
-      cell->computeVolumeContribution(t);		
-    }
+	/*
+	mMesh::iter it;
+
+	vector<pthread_t> threads;
+	int numThreads = 0;
+	int batches = 0;
+	int maxThreads = MAX_THREADS;
+	int rc;
+	void *retval;
+
+	for(it = begin;it != end; ++it){
+		mEntity *m = (*it);
+		DGCell *cell = (DGCell*)m->getCell();
+
+		threads.push_back(0);		//add one thread
+		numThreads++;
+		infoComputeVolume info(cell, t, &threads[threads.size()-1]);
+		rc = pthread_create(&threads[threads.size()-1], NULL,
+							parallelVolume, &info);
+		if (rc){
+			printf("ERROR: return code from pthread_create() is %d\n", rc);
+			exit(-1);
+		}
+
+		if(numThreads >= maxThreads){
+			numThreads = 0;
+			for (int i = batches*maxThreads; i < threads.size(); ++i){
+				pthread_join(threads[i], &retval);
+			}	
+			batches++;
+		}
+		//cell->computeVolumeContribution(t);		
+	}
+
+	for (int i = batches*maxThreads; i < threads.size(); ++i){
+		pthread_join(threads[i], &retval);
+	}*/
 }
 
 void TimeIntegrator::assembleBoundary(const mMesh::iter begin,const mMesh::iter end,double t)
 {  
- for(mMesh::iter it = begin;it != end;++it)
+/* for(mMesh::iter it = begin;it != end;++it)
     {
       mEntity *m = (*it);
       DGBoundaryCell *cell = (DGBoundaryCell*)m->getCell();
       cell->computeBoundaryContributions(t);
-    }
+    } */
 }
 
 void TimeIntegrator::limit(const mMesh::iter begin, const mMesh::iter end, double time)

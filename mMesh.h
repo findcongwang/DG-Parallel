@@ -36,6 +36,7 @@ class mMesh
   virtual ~mMesh();
   // adding mesh entities, they are created with any other entities.
 
+  int getSize(int n);
   Vertex* getVertex	(int iD);
   Edge*   getEdge (vector<Vertex*>& v, int geomO); 
   Face*   getFace (vector<Vertex*>& v, int Type, int geomO); 
