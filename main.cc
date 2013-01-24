@@ -33,12 +33,18 @@ unsigned int numCPU;
 unsigned int numThreads;
 vector<infoWrapper> threadInfo[3];
 
+double timeComputeVolumeCalls = 0;
+int numComputeVolumeCalls = 0;
+
+double timeComputeBoundaryCalls = 0;
+int numComputeBoundaryCalls = 0;
+
+
 int main(int argc, char *argv[])
 {
 
   numCPU = sysconf( _SC_NPROCESSORS_ONLN );
   numThreads = numCPU;
-  //printf("%d CPUs online\n", numCPU);
 
   mImportExport io;
   printf("reading the mesh ...\n");
@@ -165,6 +171,16 @@ int main(int argc, char *argv[])
 		DaleExample(theMesh,200,atoi(argv[3]));
 		break;
     }
-  return 0;
+
+    printf("\n%d CPUs online\n", numCPU);
+    printf("Average runtime of computeVolumeContribution %f\n", 
+        timeComputeVolumeCalls / numComputeVolumeCalls);
+    printf("Average runtime of computeBoundaryContribution %f\n", 
+        timeComputeBoundaryCalls / numComputeBoundaryCalls);
+
+    printf("%f %d %f %d\n", timeComputeVolumeCalls, numComputeVolumeCalls
+        ,timeComputeBoundaryCalls, numComputeBoundaryCalls);
+
+    return 0;
 }
 

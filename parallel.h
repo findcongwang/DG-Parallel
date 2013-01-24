@@ -7,6 +7,7 @@
 #include <list>
 #include <vector>
 #include <pthread.h>
+#include <time.h>
 
 class infoWrapper{
 public:
@@ -20,5 +21,6 @@ public:
 void *parallelVolume(void *info);
 //void *parallelBoundary(void *info);
 
+timespec diff(timespec start, timespec end);
 
 #endif

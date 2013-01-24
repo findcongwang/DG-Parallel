@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <math.h>
 #include <vector>
+#include <time.h>
 
 extern double ** allocateMatrix(int n);
 extern void invmat (double **, double **, int);
@@ -21,6 +22,14 @@ extern void freeMatrix( double **v);
 extern unsigned int numCPU;
 extern unsigned int numThreads;
 extern vector<infoWrapper> threadInfo[4];
+
+extern double timeComputeVolumeCalls;
+extern int numComputeVolumeCalls;
+
+extern double timeComputeBoundaryCalls;
+extern int numComputeBoundaryCalls;
+
+timespec timer1, timer2;
 
 TimeIntegrator::TimeIntegrator(mDGMesh *m,DGLimiter *l,int NbFields, int DOF):theMesh(m),theLimiter(l),
 								     cSize(NbFields),dof(DOF)
@@ -1275,6 +1284,9 @@ double Multigrid::advanceInTime(double t, double dt)
 
 void TimeIntegrator::assembleVolume(double t)
 {
+	//timer start
+	clock_gettime(CLOCK_MONOTONIC, &timer1);
+
 	mMesh::iter it;
 	int rc;
 	void *retval;
@@ -1303,41 +1315,57 @@ void TimeIntegrator::assembleVolume(double t)
 	for (int i = 0; i < numThreads-1; ++i){
 		pthread_join(threadInfo[n][i]._id, &retval);
 	}
+
+	//update timer infos
+	clock_gettime(CLOCK_MONOTONIC, &timer2);
+	timeComputeVolumeCalls += diff(timer1,timer2).tv_sec;
+	timeComputeVolumeCalls += diff(timer1,timer2).tv_nsec * 0.000000001;
+	numComputeVolumeCalls++;
 }
 
 void TimeIntegrator::assembleBoundary(double t)
-{  
-  mMesh::iter it;
-  const mMesh::iter  mesh_begin = theMesh->begin(n-1);
-  const mMesh::iter  mesh_end=theMesh->end(n-1);
-  list<DGCell*> setToZero;
-  int notPhysical;
+{ 
+	//timer start
+	clock_gettime(CLOCK_MONOTONIC, &timer1);
 
-  for(it = mesh_begin;it != mesh_end;++it)
-    {
-      mEntity *m = (*it);
-      DGBoundaryCell *cell = (DGBoundaryCell*)m->getCell();
-	  notPhysical = cell->computeBoundaryContributions(t);
-      if (notPhysical) 
+	mMesh::iter it;
+	const mMesh::iter  mesh_begin = theMesh->begin(n-1);
+	const mMesh::iter  mesh_end=theMesh->end(n-1);
+	list<DGCell*> setToZero;
+	int notPhysical;
+
+	for(it = mesh_begin;it != mesh_end;++it)
 	{
-	  if (notPhysical==1) setToZero.push_back((DGCell*) cell->getLeftCell());
-	  else if (notPhysical==2) setToZero.push_back((DGCell*) cell->getRightCell());
-	  else 
-	    {
-	      setToZero.push_back((DGCell*) cell->getLeftCell());
-	      setToZero.push_back((DGCell*) cell->getRightCell());
-	    }
+		mEntity *m = (*it);
+		DGBoundaryCell *cell = (DGBoundaryCell*)m->getCell();
+		notPhysical = cell->computeBoundaryContributions(t);
+		if (notPhysical) 
+		{
+			if (notPhysical==1) setToZero.push_back((DGCell*) cell->getLeftCell());
+			else if (notPhysical==2) setToZero.push_back((DGCell*) cell->getRightCell());
+			else 
+			{
+			  setToZero.push_back((DGCell*) cell->getLeftCell());
+			  setToZero.push_back((DGCell*) cell->getRightCell());
+		    }
+		}
 	}
-    }
 
-  list<DGCell*>::const_iterator itt, end_list;
-  for(itt=setToZero.begin(); itt!=setToZero.end(); ++itt)
-    {
-      //mEntity *m = (*itt);
-      //DGCell *cell = (DGBoundaryCell*)m->getCell();
-      (*itt)->setToZero(t);
-    }
- // exit(0);
+	list<DGCell*>::const_iterator itt, end_list;
+	for(itt=setToZero.begin(); itt!=setToZero.end(); ++itt)
+	{
+		//mEntity *m = (*itt);
+		//DGCell *cell = (DGBoundaryCell*)m->getCell();
+		(*itt)->setToZero(t);
+	}
+
+	//update timer infos
+	clock_gettime(CLOCK_MONOTONIC, &timer2);
+	timeComputeBoundaryCalls += diff(timer1,timer2).tv_sec;
+	timeComputeBoundaryCalls += diff(timer1,timer2).tv_nsec * 0.000000001;
+	numComputeBoundaryCalls++;
+
+	cout << "numvol in vol " << numComputeVolumeCalls << endl;
 }
 
 void TimeIntegrator::limit(double time)
