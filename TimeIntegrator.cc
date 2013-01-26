@@ -1308,10 +1308,10 @@ void TimeIntegrator::assembleVolume(double t)
     {
 		mEntity *m = (*it);
 		DGCell *cell = (DGCell*)m->getCell();
-		cell->computeVolumeContribution(info->_t);		
+		cell->computeVolumeContribution(t);		
     }
 
-	//wait for all the finish
+	//wait for all threads to finish
 	for (int i = 0; i < numThreads-1; ++i){
 		pthread_join(threadInfo[n][i]._id, &retval);
 	}
@@ -1328,44 +1328,58 @@ void TimeIntegrator::assembleBoundary(double t)
 	//timer start
 	clock_gettime(CLOCK_MONOTONIC, &timer1);
 
-	mMesh::iter it;
-	const mMesh::iter  mesh_begin = theMesh->begin(n-1);
-	const mMesh::iter  mesh_end=theMesh->end(n-1);
-	list<DGCell*> setToZero;
-	int notPhysical;
+    mMesh::iter it;
+    int rc;
+    void *retval;
+    int notPhysical;
 
-	for(it = mesh_begin;it != mesh_end;++it)
-	{
-		mEntity *m = (*it);
-		DGBoundaryCell *cell = (DGBoundaryCell*)m->getCell();
-		notPhysical = cell->computeBoundaryContributions(t);
-		if (notPhysical) 
-		{
-			if (notPhysical==1) setToZero.push_back((DGCell*) cell->getLeftCell());
-			else if (notPhysical==2) setToZero.push_back((DGCell*) cell->getRightCell());
-			else 
-			{
-			  setToZero.push_back((DGCell*) cell->getLeftCell());
-			  setToZero.push_back((DGCell*) cell->getRightCell());
-		    }
-		}
-	}
+    //fork all but last chunk
+    for (int i = 0; i < numThreads-1; ++i){
+        threadInfo[n-1][i]._t = t;
+        rc = pthread_create(&threadInfo[n-1][i]._id, NULL,
+                            parallelBoundary, &threadInfo[n-1][i]);
+        if (rc){
+            printf("ERROR: return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
+    }
 
-	list<DGCell*>::const_iterator itt, end_list;
-	for(itt=setToZero.begin(); itt!=setToZero.end(); ++itt)
-	{
-		//mEntity *m = (*itt);
-		//DGCell *cell = (DGBoundaryCell*)m->getCell();
-		(*itt)->setToZero(t);
-	}
+    //work on last chunk
+    infoWrapper* info = &threadInfo[n-1][numThreads-1];
+    for(it = info->_begin; it != info->_end; ++it)
+    {
+        mEntity *m = (*it);
+        DGBoundaryCell *cell = (DGBoundaryCell*)m->getCell();
+        notPhysical = cell->computeBoundaryContributions(info->_t);
+
+        switch(notPhysical)
+        {
+        case 0:
+            //nothing to do
+            break;
+        case 1:
+            cell->getLeftCell()->setToZero(info->_t);
+            break;
+        case 2:
+            cell->getRightCell()->setToZero(info->_t);
+            break;
+        default:
+            cell->getLeftCell()->setToZero(info->_t);
+            cell->getRightCell()->setToZero(info->_t);
+            break;
+        }
+    }
+
+    //wait for all threads to finish
+    for (int i = 0; i < numThreads-1; ++i){
+        pthread_join(threadInfo[n-1][i]._id, &retval);
+    }
 
 	//update timer infos
 	clock_gettime(CLOCK_MONOTONIC, &timer2);
 	timeComputeBoundaryCalls += diff(timer1,timer2).tv_sec;
 	timeComputeBoundaryCalls += diff(timer1,timer2).tv_nsec * 0.000000001;
 	numComputeBoundaryCalls++;
-
-	cout << "numvol in vol " << numComputeVolumeCalls << endl;
 }
 
 void TimeIntegrator::limit(double time)

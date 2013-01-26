@@ -39,143 +39,177 @@ int numComputeVolumeCalls = 0;
 double timeComputeBoundaryCalls = 0;
 int numComputeBoundaryCalls = 0;
 
+timespec timer1load, timer2load;
 
 int main(int argc, char *argv[])
 {
 
-  numCPU = sysconf( _SC_NPROCESSORS_ONLN );
-  numThreads = numCPU;
+    numCPU = sysconf( _SC_NPROCESSORS_ONLN );
+    numThreads = numCPU;
 
-  mImportExport io;
-  printf("reading the mesh ...\n");
-  clock_t t1 = clock();
-  mDGMesh *theMesh = new mDGMesh;
-  io.import(argv[1],theMesh);
-  clock_t t2 = clock();
-  printf("Mesh read in %f seconds\n", double (t2-t1)/CLOCKS_PER_SEC);
-  printf("creating connectivities ...\n");
+    //timer start
+    clock_gettime(CLOCK_MONOTONIC, &timer1load);
 
-  switch (atoi(argv[2]))
+    mImportExport io;
+    printf("reading the mesh ...\n");
+    clock_t t1 = clock();
+    mDGMesh *theMesh = new mDGMesh;
+    io.import(argv[1],theMesh);
+    clock_t t2 = clock();
+    printf("Mesh read in %f seconds\n", double (t2-t1)/CLOCKS_PER_SEC);
+    printf("creating connectivities ...\n");
+
+    switch (atoi(argv[2]))
     {
     case 3:
-      printf("mesh read. %f seconds needed\n",(double)(t2-t1)/CLOCKS_PER_SEC);
-      t1 = clock();
-      getchar();
-      theMesh->createCellBoundaries(3,2);
-      t2 = clock();
-      printf("%d faces created %f seconds needed\n",theMesh->size(2),(double)(t2-t1)/CLOCKS_PER_SEC);
-      getchar();
-      t1 = clock();
-      theMesh->createCellBoundaries(2,1);
-      t2 = clock();
-      printf("%d edges created %f seconds needed\n",theMesh->size(1),(double)(t2-t1)/CLOCKS_PER_SEC);
-      getchar();
-      t1 = clock();
+        printf("mesh read. %f seconds needed\n",(double)(t2-t1)/CLOCKS_PER_SEC);
+        t1 = clock();
+        getchar();
+        theMesh->createCellBoundaries(3,2);
+        t2 = clock();
+        printf("%d faces created %f seconds needed\n",theMesh->size(2),(double)(t2-t1)/CLOCKS_PER_SEC);
+        getchar();
+        t1 = clock();
+        theMesh->createCellBoundaries(2,1);
+        t2 = clock();
+        printf("%d edges created %f seconds needed\n",theMesh->size(1),(double)(t2-t1)/CLOCKS_PER_SEC);
+        getchar();
+        t1 = clock();
 
-	  int i;
-      for(i=0;i<3;i++)
-	{
-	  int key = -1;
-	  int NK = 0;
-	  for(mMesh::iter it = theMesh->begin(0);it != theMesh->end(0); it++)
-	    {
-	      mEntity *e = *it;
-	      if(key != e->getId())
-		{
-		  NK++;
-		}
-	    }
-	  printf("PHI(%d) = %12.5E\n",i,(double)(theMesh->size(i))/(double)(NK));
-	  NK = 0;
-	}
-      break;
+        int i;
+        for(i=0;i<3;i++)
+        {
+            int key = -1;
+            int NK = 0;
+            for(mMesh::iter it = theMesh->begin(0);it != theMesh->end(0); it++)
+            {
+                mEntity *e = *it;
+                if(key != e->getId())
+                {
+                    NK++;
+                }
+            }
+            printf("PHI(%d) = %12.5E\n",i,(double)(theMesh->size(i))/(double)(NK));
+            NK = 0;
+        }
+        break;
     default:
-      int dim = (theMesh->size(3) !=0)?3:2;
-   
-	  t1=clock();
-      theMesh->createCellBoundaries(dim,dim-1); //creating edges
-	  t2 = clock();
-      printf("Edges created in %e seconds\n", double (t2-t1)/CLOCKS_PER_SEC);
-      t1=clock();
-	  theMesh->createConnections(dim-1,dim); //create poiters to cells from cell boundaries
-	  //      theMesh->createConnections(0,dim); //connect faces to vertices  // needed for VertLimiter
-	  // needed for reconstructing curved boundaries:
-	  theMesh->createConnections(0,dim-1);
-	  //if (dim==2) theMesh->createConnections(0,1);  //create pointers to edges from vertices   
-     // if (dim==3) theMesh->createConnections(1,2);   // create pointers to faces from edges 
-	  t2 = clock();
-      printf("Connections created in %e seconds\n", double (t2-t1)/CLOCKS_PER_SEC);
+        int dim = (theMesh->size(3) !=0)?3:2;
 
-       theMesh->setPeriodicBC(dim);
-	  printf("%d cells \n", theMesh->size(dim));
-      printf("%d boundaries ...\n",theMesh->size(dim-1));
-      break;
+        t1=clock();
+        theMesh->createCellBoundaries(dim,dim-1); //creating edges
+        t2 = clock();
+        printf("Edges created in %e seconds\n", double (t2-t1)/CLOCKS_PER_SEC);
+        t1=clock();
+        theMesh->createConnections(dim-1,dim); //create poiters to cells from cell boundaries
+        //      theMesh->createConnections(0,dim); //connect faces to vertices  // needed for VertLimiter
+        // needed for reconstructing curved boundaries:
+        theMesh->createConnections(0,dim-1);
+        //if (dim==2) theMesh->createConnections(0,1);  //create pointers to edges from vertices   
+        // if (dim==3) theMesh->createConnections(1,2);   // create pointers to faces from edges 
+        t2 = clock();
+        printf("Connections created in %e seconds\n", double (t2-t1)/CLOCKS_PER_SEC);
+
+        theMesh->setPeriodicBC(dim);
+        printf("%d cells \n", theMesh->size(dim));
+        printf("%d boundaries ...\n",theMesh->size(dim-1));
+        break;
     }
 
-  printf("DG begins ...\n");
+    //collect timer info
+    clock_gettime(CLOCK_MONOTONIC, &timer2load);
+    printf("Runtime of importing mesh is %fs\n", 
+            diff(timer1load,timer2load).tv_sec + diff(timer1load,timer2load).tv_nsec * 0.000000001);
+
+    //Define chunks
+    for (int i = 0; i < 4; ++i)
+    {
+        if(theMesh->getSize(i) == 0) continue;
+
+        int chunkSize = theMesh->getSize(i) / numThreads;
+        //printf("dim %d, size %d, chunkSize %d\n", i, theMesh->getSize(i), chunkSize);
+
+        mMesh::iter it;
+        const mMesh::iter mesh_begin = theMesh->begin(i);
+        const mMesh::iter mesh_end = theMesh->end(i);
+
+        it = mesh_begin;
+        for (int j = 0; j < numThreads-1; ++j)
+        {
+            mMesh::iter head = it;
+            for (int k = 0; k < chunkSize; ++k)
+            {
+                ++it;
+            }
+            threadInfo[i].push_back(infoWrapper(head, it, 0, 0));
+        }
+        threadInfo[i].push_back(infoWrapper(it, mesh_end, 0, 0));
+    }
+
+    printf("DG begins ...\n");
   
-  switch (atoi(argv[2]))
+    switch (atoi(argv[2]))
     {
     case 1:
-      ShockTube(theMesh,atoi(argv[3]));
-      break;
+        ShockTube(theMesh,atoi(argv[3]));
+        break;
     case 2:
-      OutFlow (theMesh,3.0,0.0,200,atoi(argv[3]));
-      break;
+        OutFlow (theMesh,3.0,0.0,200,atoi(argv[3]));
+        break;
 	case 9:
-      LinSystem(theMesh,atoi(argv[3]));
-      break;
+        LinSystem(theMesh,atoi(argv[3]));
+        break;
     case 8:
-      Suli(theMesh,atoi(argv[3]));
-      break;
+        Suli(theMesh,atoi(argv[3]));
+        break;
     case 4:
-      ScalarPb (theMesh,atoi(argv[3]));
-      break;
+        ScalarPb (theMesh,atoi(argv[3]));
+        break;
     case 5:
-      RayleighTaylor (theMesh,200,atoi(argv[3]));
-      break;
+        RayleighTaylor (theMesh,200,atoi(argv[3]));
+        break;
     case 6:
-      Burger(theMesh,atoi(argv[3]));
-      break;
+        Burger(theMesh,atoi(argv[3]));
+        break;
     case 7:
-      Burger2D(theMesh,atoi(argv[3]));
-      break;
+        Burger2D(theMesh,atoi(argv[3]));
+        break;
     case 12:
-      DoubleMach(theMesh,200,atoi(argv[3]));
-      break;
+        DoubleMach(theMesh,200,atoi(argv[3]));
+        break;
     case 13:
-      SuperVortex(theMesh,200,atoi(argv[3]));
-      break; 
+        SuperVortex(theMesh,200,atoi(argv[3]));
+        break; 
     case 14:
-      Cylinder(theMesh,200,atoi(argv[3]));
-      break; 
+        Cylinder(theMesh,200,atoi(argv[3]));
+        break; 
 	case 15:
-      FlowAroundAirfoil(theMesh,200,atoi(argv[3]));
-      break; 
+        FlowAroundAirfoil(theMesh,200,atoi(argv[3]));
+        break; 
     case 16:
-      ForwardFacingStep(theMesh,200,atoi(argv[3]));
-      break;
+        ForwardFacingStep(theMesh,200,atoi(argv[3]));
+        break;
     case 17:
-      SphericalBlast(theMesh,200,atoi(argv[3]));
-      break;
+        SphericalBlast(theMesh,200,atoi(argv[3]));
+        break;
 	case 18:
-      Riemann2D(theMesh,200,atoi(argv[3]));
-      break;
+        Riemann2D(theMesh,200,atoi(argv[3]));
+        break;
 	case 19:
-      TalkExample(theMesh,200,atoi(argv[3]));
-      break;
+        TalkExample(theMesh,200,atoi(argv[3]));
+        break;
     case 20:
-      Sphere(theMesh,200,atoi(argv[3]));
-      break;
+        Sphere(theMesh,200,atoi(argv[3]));
+        break;
 	case 88:
 		DaleExample(theMesh,200,atoi(argv[3]));
 		break;
     }
 
     printf("\n%d CPUs online\n", numCPU);
-    printf("Average runtime of computeVolumeContribution %f\n", 
+    printf("Runtime (average) of computeVolumeContribution is %fs\n", 
         timeComputeVolumeCalls / numComputeVolumeCalls);
-    printf("Average runtime of computeBoundaryContribution %f\n", 
+    printf("Runtime (average) of computeBoundaryContribution is %fs\n", 
         timeComputeBoundaryCalls / numComputeBoundaryCalls);
 
     printf("%f %d %f %d\n", timeComputeVolumeCalls, numComputeVolumeCalls

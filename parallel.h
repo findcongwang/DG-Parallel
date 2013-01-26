@@ -19,7 +19,7 @@ public:
 };
 
 void *parallelVolume(void *info);
-//void *parallelBoundary(void *info);
+void *parallelBoundary(void *info);
 
 timespec diff(timespec start, timespec end);
 

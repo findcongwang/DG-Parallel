@@ -11,10 +11,6 @@
 #include <cstdlib>
 #include <vector>
 
-extern unsigned int numCPU;
-extern unsigned int numThreads;
-extern vector<infoWrapper> threadInfo[4];
-
 void classifyUnclassifiedVerices (mMesh *m)
 {
   for(int i=1;i<4;i++)
@@ -76,32 +72,6 @@ void mImportExport::import (char *fName, mMesh *theMesh)
 		sprintf(text,"unknown extension %s in file %s",ext,fName);
 		throw new mExceptionFileNotFound (__LINE__,__FILE__,text);
 	}
-
-  	//go define chunks
-  	for (int i = 0; i < 4; ++i)
-  	{
- 		if(theMesh->getSize(i) == 0) continue;
-
-  		int chunkSize = theMesh->getSize(i) / numThreads;
-  		//printf("dim %d, size %d, chunkSize %d\n", i, theMesh->getSize(i), chunkSize);
-  		
-  		mMesh::iter it;
-		const mMesh::iter mesh_begin = theMesh->begin(i);
-		const mMesh::iter mesh_end = theMesh->end(i);
-
-		it = mesh_begin;
-		for (int j = 0; j < numThreads-1; ++j)
-		{
-			mMesh::iter head = it;
-			for (int k = 0; k < chunkSize; ++k)
-			{
-				++it;
-			}
-			threadInfo[i].push_back(infoWrapper(head, it, 0, 0));
-		}
-		threadInfo[i].push_back(infoWrapper(it, mesh_end, 0, 0));
-  	}
-
 }
 
 void mImportExport::importGmshFile (char *fName, mMesh *theMesh)

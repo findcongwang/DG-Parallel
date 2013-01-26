@@ -1,5 +1,10 @@
 #include "parallel.h"
 
+extern unsigned int numCPU;
+extern unsigned int numThreads;
+extern vector<infoWrapper> threadInfo[4];
+extern vector<infoWrapper> threadInfoBoundary[4];
+
 infoWrapper::infoWrapper(mMesh::iter begin, mMesh::iter end, double t, pthread_t id)
 	: _begin(begin), _end(end), _t(t), _id(id){}
 
@@ -18,36 +23,38 @@ void *parallelVolume(void *ptr){
 	pthread_exit(0);
 }
 
-/*
 void *parallelBoundary(void *ptr){
-	infoComputeBoundary* info = (infoComputeBoundary*)ptr;
+	infoWrapper* info = (infoWrapper*)ptr;
 
-	printf("Thread %ld started\n", *(info->idptr));
-	parallelBoundaryHelper(info->cell, info->t, info->checkPhysical, info->zeroList);
-	printf("Thread %ld done\n", *(info->idptr));
+    mMesh::iter it;
+    int notPhysical;
+
+    for(it = info->_begin; it != info->_end; ++it)
+    {
+        mEntity *m = (*it);
+        DGBoundaryCell *cell = (DGBoundaryCell*)m->getCell();
+        notPhysical = cell->computeBoundaryContributions(info->_t);
+
+	    switch(notPhysical)
+	    {
+		case 0:
+			//nothing to do
+			break;
+		case 1:
+			cell->getLeftCell()->setToZero(info->_t);
+			break;
+		case 2:
+			cell->getRightCell()->setToZero(info->_t);
+			break;
+		default:
+			cell->getLeftCell()->setToZero(info->_t);
+			cell->getRightCell()->setToZero(info->_t);
+			break;
+	    }
+    }
+
 	pthread_exit(0);
 }
-*/
-
-/*
-void *parallelBoundaryHelper(DGCell* cell, double t, bool checkPhysical, list<DGCell*> *zeroList){
-	if(checkPhysical){
-		int notPhysical;
-		notPhysical = cell->computeBoundaryContributions(t);
-		if (notPhysical){
-			if (notPhysical==1) zeroList->push_back(cell->getLeftCell());
-			else if (notPhysical==2) zeroList->push_back(cell->getRightCell());
-			else{
-				zeroList->push_back(cell->getLeftCell());
-				zeroList->push_back(cell->getRightCell());
-			}
-		}
-	}
-	else{
-		cell->computeBoundaryContributions(t);
-	}
-}
-*/
 
 timespec diff(timespec start, timespec end)
 {
