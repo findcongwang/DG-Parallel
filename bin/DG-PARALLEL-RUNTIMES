@@ -1,0 +1,56 @@
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL] Running on mesh: advection1024.msh
+[OUTPUT: DG-PARALLEL] Number of CPUs online: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.145293 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.001279 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.001808 seconds
+[OUTPUT: DG-PARALLEL] Total runtime: 3.919593 seconds
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL] Running on mesh: advection16.msh
+[OUTPUT: DG-PARALLEL] Number of CPUs online: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.001353 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.002728 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.003257 seconds
+[OUTPUT: DG-PARALLEL] Total runtime: 0.303642 seconds
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL] Running on mesh: advection256.msh
+[OUTPUT: DG-PARALLEL] Number of CPUs online: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.021476 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.001610 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.001447 seconds
+[OUTPUT: DG-PARALLEL] Total runtime: 1.338990 seconds
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL] Running on mesh: advection256tr.msh
+[OUTPUT: DG-PARALLEL] Number of CPUs online: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.048584 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.001172 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.001626 seconds
+[OUTPUT: DG-PARALLEL] Total runtime: 2.766664 seconds
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL] Running on mesh: advection4.msh
+[OUTPUT: DG-PARALLEL] Number of CPUs online: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.000683 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.008801 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.007354 seconds
+[OUTPUT: DG-PARALLEL] Total runtime: 0.269916 seconds
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL] Running on mesh: advection64.msh
+[OUTPUT: DG-PARALLEL] Number of CPUs online: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.006274 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.002181 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.002402 seconds
+[OUTPUT: DG-PARALLEL] Total runtime: 0.615582 seconds
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL]
+[OUTPUT: DG-PARALLEL] Running on mesh: airfoil2d.msh
+[OUTPUT: DG-PARALLEL] Number of CPUs online: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.146861 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.000964 seconds
+[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.001945 seconds
+[OUTPUT: DG-PARALLEL] Total runtime: 3.986850 seconds
+[OUTPUT: DG-PARALLEL]

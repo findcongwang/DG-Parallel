@@ -100,12 +100,3 @@ class mMeshEntityContainer
 };
 
 #endif
-
-
-
-
-
-
-
-
-

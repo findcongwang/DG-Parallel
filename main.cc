@@ -93,6 +93,7 @@ int main(int argc, char *argv[])
             NK = 0;
         }
         break;
+        
     default:
         int dim = (theMesh->size(3) !=0)?3:2;
 
@@ -118,8 +119,6 @@ int main(int argc, char *argv[])
 
     //collect timer info
     clock_gettime(CLOCK_MONOTONIC, &timer2load);
-    printf("Runtime of importing mesh is %fs\n", 
-            diff(timer1load,timer2load).tv_sec + diff(timer1load,timer2load).tv_nsec * 0.000000001);
 
     //Define chunks
     for (int i = 0; i < 4; ++i)
@@ -206,14 +205,24 @@ int main(int argc, char *argv[])
 		break;
     }
 
-    printf("\n%d CPUs online\n", numCPU);
-    printf("Runtime (average) of computeVolumeContribution is %fs\n", 
+    //[OUTPUT: DG-PARALLEL]
+    printf("[OUTPUT: DG-PARALLEL]\n");
+    printf("[OUTPUT: DG-PARALLEL] Running on mesh: %s\n", argv[1]);
+    printf("[OUTPUT: DG-PARALLEL] Number of CPUs online: %d\n", numCPU);
+    printf("[OUTPUT: DG-PARALLEL] Runtime of importing mesh: %f seconds\n", 
+            diff(timer1load,timer2load).tv_sec + diff(timer1load,timer2load).tv_nsec * 0.000000001);
+    printf("[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: %f seconds\n", 
         timeComputeVolumeCalls / numComputeVolumeCalls);
-    printf("Runtime (average) of computeBoundaryContribution is %fs\n", 
+    printf("[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: %f seconds\n", 
         timeComputeBoundaryCalls / numComputeBoundaryCalls);
 
     printf("%f %d %f %d\n", timeComputeVolumeCalls, numComputeVolumeCalls
         ,timeComputeBoundaryCalls, numComputeBoundaryCalls);
+
+    clock_gettime(CLOCK_MONOTONIC, &timer2load);
+    printf("[OUTPUT: DG-PARALLEL] Total runtime: %f seconds\n", 
+            diff(timer1load,timer2load).tv_sec + diff(timer1load,timer2load).tv_nsec * 0.000000001);
+    printf("[OUTPUT: DG-PARALLEL]\n");
 
     return 0;
 }

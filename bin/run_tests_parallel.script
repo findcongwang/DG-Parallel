@@ -1,0 +1,24 @@
+#!/bin/bash
+
+eval "rm -rf test/*"
+
+DG=DG-Parallel
+OUTFILE=DG-PARALLEL-RUNTIMES
+
+eval "rm -f $OUTFILE"
+
+for MESH in *.msh
+do
+	eval "mkdir test/result-$MESH"
+
+	eval "cp $DG ./test/result-$MESH/"
+	eval "cp $MESH ./test/result-$MESH/"
+
+	eval "cd ./test/result-$MESH/ && ./$DG $MESH 4 1 | grep 'OUTPUT:' > output-$MESH.out &"
+
+	#important, only run one parallel at once
+	wait
+done
+
+eval "rm -f *~"
+eval "cat ./test/*/*.out > $OUTFILE"

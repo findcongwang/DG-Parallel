@@ -88,7 +88,7 @@ lint:
 	$(LINT) $(CC_FLAGS) $(SRC)
 
 exe:	
-	$(CPP) $(CC_FLAGS) -pthread main.cc lib/libmeshLib.a -lrt -o bin/dg -lc -lm 
+	$(CPP) $(CC_FLAGS) -pthread main.cc lib/libmeshLib.a -lrt -o bin/DG-Parallel -lc -lm 
 depend:
 	(sed '/^# DO NOT DELETE THIS LINE/q' Makefile && \
 	$(CPP) -MM  $(CFLAGS) ${SRC} \
