@@ -14,5 +14,5 @@
 
 # Output
 *.pos
-*/test/*
+*/test/res*
 *.*~
