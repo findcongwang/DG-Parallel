@@ -19,7 +19,7 @@ CPP		= g++ -O3
 
 RM       = rm
 RMFLAGS  = -f
-
+CC_FLAGS = -O3
 LIB      = lib/libmeshLib.a
 
 SRC = mEntity.cc \
