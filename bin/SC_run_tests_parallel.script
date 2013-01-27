@@ -10,6 +10,7 @@ DG="DG-Parallel"
 MESHDIR="test-supercomputer"
 OUTFILE="DG-PARALLEL-RUNTIMES"
 
+eval "module load gcc"
 eval "rm -f $OUTFILE"
 eval "cd $MESHDIR"
 
