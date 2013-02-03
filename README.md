@@ -14,6 +14,7 @@ TODO:
 	
 Runtime trials
 --------------
-1. with restrict const pointer to basis functions
-2. with cache aligned structure size
-3. with prefetching
+1. Hot/Cold fields
+2. Restricted pointers
+3. Cache Aligned
+4. Prefetching
