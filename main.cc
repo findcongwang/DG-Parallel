@@ -215,9 +215,8 @@ int main(int argc, char *argv[])
         timeComputeVolumeCalls / numComputeVolumeCalls);
     printf("[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: %f seconds\n", 
         timeComputeBoundaryCalls / numComputeBoundaryCalls);
-
-    printf("%f %d %f %d\n", timeComputeVolumeCalls, numComputeVolumeCalls
-        ,timeComputeBoundaryCalls, numComputeBoundaryCalls);
+    printf("[OUTPUT: DG-PARALLEL] Time spent in Volume: %f number of instances called: %d\n", timeComputeVolumeCalls, numComputeVolumeCalls);
+    printf("[OUTPUT: DG-PARALLEL] Time spent in Boundary: %f number of instances called: %d\n", timeComputeBoundaryCalls, numComputeBoundaryCalls);
 
     clock_gettime(CLOCK_MONOTONIC, &timer2load);
     printf("[OUTPUT: DG-PARALLEL] Total runtime: %f seconds\n", 

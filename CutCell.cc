@@ -39,19 +39,19 @@ CutCell::CutCell (ConservationLaw*l,
 		GaussIntegrator *I,Geometry* g)
   : DGCell(l,e,f,er,m,I)
 {
-	theGeometry = g;
+	details->theGeometry = g;
 //	init();
 }
 
 CutCell::~CutCell ()
 {
   delete theFieldsCoefficients;
-  delete [] theMean;
-  delete [] limSlope;
+  delete [] details->theMean;
+  delete [] details->limSlope;
   delete [] theRightHandSide;
-  delete theFunctionSpace;
-  delete theMapping;
-  freeMatrix(theInvertMassMatrix);
+  delete details->theFunctionSpace;
+  delete details->theMapping;
+  freeMatrix(details->theInvertMassMatrix);
 }
 
 void CutCell::init ()
@@ -66,14 +66,14 @@ void CutCell::init ()
     {
       cutCellGaussPoint pg;
 	  volumeGaussPoint& PG = pt(i);
-      //theGaussIntegrator->iPoint(theMeshEntity,i,order,u,v,w,weight); 
+      //details->theGaussIntegrator->iPoint(theMeshEntity,i,order,u,v,w,weight); 
       pg.isInsideDomain = isInsideTheDomain(PG.x,PG.y,PG.z);
 		
 	  if (!pg.isInsideDomain) {// find the corresponding point inside the domain and what element it belongs to 
-		  pg.reflCell = theGeometry->findReflPoint(this, PG.x,PG.y,PG.z,xr,yr,zr);
+		  pg.reflCell = details->theGeometry->findReflPoint(this, PG.x,PG.y,PG.z,xr,yr,zr);
           pg.reflCell->getMapping()->invert(xr,yr,zr,u,v,w);
 		  pg.fctsAtReflPoint = new double [fSize];
-      pg.reflCell->theFunctionSpace->fcts(u,v,w,pg.fctsAtReflPoint);
+      pg.reflCell->details->theFunctionSpace->fcts(u,v,w,pg.fctsAtReflPoint);
 	  }
       double r = sqrt(PG.x*PG.x+PG.y*PG.y);   //generalize!!!!!
       pg.N(0) = PG.x/r;
@@ -107,9 +107,9 @@ void CutCell::L2ProjCutCell ()
 	double tmp = (val[1]*val[1] + val[2]*val[2])/(val[0]*val[0]);
     }
 
-  if (theFunctionSpace->isOrthogonal())
+  if (details->theFunctionSpace->isOrthogonal())
     {
-      double inv_volume = 1./(2.*volume);
+      double inv_volume = 1./(2.*details->volume);
       for(i=0;i<cSize;++i)
 	for(j=0;j<fSize;++j) 
 	  theFieldsCoefficients->get(i,j) = theRightHandSide[j+fSize*i]*inv_volume;
@@ -121,7 +121,7 @@ void CutCell::L2ProjCutCell ()
 	  {
 	    double dxi = 0.0;
 	    for(int j = 0;j<fSize;++j){
-	      dxi += theInvertMassMatrix[i][j] * theRightHandSide[j+fSize*k];
+	      dxi += details->theInvertMassMatrix[i][j] * theRightHandSide[j+fSize*k];
 	    }
 	    theFieldsCoefficients->get(k,i) = dxi;
 	  }

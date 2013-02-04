@@ -21,193 +21,195 @@ extern double ** allocateMatrix(int n);
 
 class DG_Dofs 
 {
-  public :
+public:
     short NU,Nb,FS;
-  ~DG_Dofs();
-  double **theFieldsCoefficients; 
-  DG_Dofs();
-  DG_Dofs(short Nb, short NbUnknowns, short FunctionSpaceSize);
-  DG_Dofs* operator= (const DG_Dofs*);
-  double & get (int i, int j)  {return theFieldsCoefficients[0][i*FS+j];}
-  double* get() {return theFieldsCoefficients[0];}
-  double & getCopy (int i, int j)  {return theFieldsCoefficients[1][i*FS+j];}
-  void copy();
-  void swap();
-  void copyBack();
-  void copyLimitedCoeffs(int);
-  void eval (vector<double> & sf, double *field, double t);
-  void eval (vector<double> & sf, double *field);
+    ~DG_Dofs();
+    double **theFieldsCoefficients; 
+    DG_Dofs();
+    DG_Dofs(short Nb, short NbUnknowns, short FunctionSpaceSize);
+    DG_Dofs* operator= (const DG_Dofs*);
+    double & get (int i, int j)  {return theFieldsCoefficients[0][i*FS+j];}
+    double* get() {return theFieldsCoefficients[0];}
+    double & getCopy (int i, int j)  {return theFieldsCoefficients[1][i*FS+j];}
+    void copy();
+    void swap();
+    void copyBack();
+    void copyLimitedCoeffs(int);
+    void eval (vector<double> & sf, double *field, double t);
+    void eval (vector<double> & sf, double *field);
 };
 
 class volumeGaussPoint
 {
- public:
-  double x,y,z;  //coordinates in physical space
-  double JacTimesWeight; //precompute (Jac*weight)
-  vector<mVector> grads;
-  double*  fcts;
-  volumeGaussPoint(){}
-  ~volumeGaussPoint(){grads.clear();}
-  volumeGaussPoint(const volumeGaussPoint &);
+public:
+    double x,y,z;  //coordinates in physical space
+    double JacTimesWeight; //precompute (Jac*weight)
+    vector<mVector> grads;
+    double*  fcts;
+    volumeGaussPoint(){}
+    ~volumeGaussPoint(){grads.clear();}
+    volumeGaussPoint(const volumeGaussPoint &);
+};
+
+class DGCell_ColdFields{
+public:
+    Geometry        *theGeometry;
+    vector<double>  theErrorRightHandSide;
+    vector<double>  *theErrorCoefficients;
+    FunctionSpace   *theFunctionSpace;  
+    FunctionSpace   *theErrorFunctionSpace;
+    Mapping         *theMapping;
+    GaussIntegrator *theGaussIntegrator;
+    double          **theInvertMassMatrix, *theMean,*theErrorMean,*limSlope,error, jump, fullJump,
+                    **theErrorMassMatrix,**theErrorInvertMassMatrix;
+    double          errNum,errDen;
+    mPoint          pMin,pMax; 
+    short           type; //???
+    short           limit; 
+    short           order;
+    short           fOrder;         //order of approximation
+    short           binNb;
+    double          cellSize;
+    double          volume;
+    double          perimeter;
+    double          maxH, minH,jumpError, maxVal;
+    double          detJac;
+    double          dt;
+    list<mEntity *> allSubs;
+    list<mEntity *> allVert;
+    double          *deltaUp0;
+    double          **DInv;
+    double          *Up0;
+    double          *Rp0;
+    short           edgeOrientation[3];
 };
 
 class DGCell:public mAttachableData
 {
 protected:
-  ConservationLaw	*theConservationLaw;
-  Geometry	     	*theGeometry;
-  mEntity	        *theMeshEntity;
-  double                *theRightHandSide;
-  vector<double>	theErrorRightHandSide;
-  vector<volumeGaussPoint>  volumeGaussPoints;
-  DG_Dofs       	*theFieldsCoefficients;
-  vector<double>	*theErrorCoefficients;
-  FunctionSpace		*theFunctionSpace;  
-  FunctionSpace		*theErrorFunctionSpace;
-  Mapping	        *theMapping;
-  GaussIntegrator       *theGaussIntegrator;
-  double                **theInvertMassMatrix, *theMean,*theErrorMean,*limSlope,error, jump, fullJump,
-						**theErrorMassMatrix,**theErrorInvertMassMatrix;
-  double                errNum,errDen;
-  mPoint                pMin,pMax; 
-  short                 type; //???
-  short			limit; 
-  short			order;
-  short			fSize;           // size of the Function Space
-  short		      	fOrder;			//order of approximation
-  short		       	cSize;            // number of equations
-  short		       	nbPtGauss;
-  short			binNb;
-  double	       	cellSize;
-  double	       	volume;
-  double	       	perimeter;
-  double	       	maxH, minH,jumpError, maxVal;
-  double                detJac;
-  double                dt;
-  list<mEntity *>	allSubs;
-  list<mEntity *>	allVert;
+    ConservationLaw	*theConservationLaw;
+    mEntity	        *theMeshEntity;
+    double          *theRightHandSide;
+    vector<volumeGaussPoint>  volumeGaussPoints;
+    DG_Dofs       	*theFieldsCoefficients;
+    short	fSize;           // size of the Function Space
+    short	cSize;            // number of equations
+    short	nbPtGauss;
+public:
+    DGCell_ColdFields *details;
 
-  void                  computeMassMatrices();
-  void			allocateErrorMassMatrices();
-  void          allocateInvJacMatrix(){DInv=allocateMatrix(cSize);}
-  virtual void          init();
-  double arclength(mEntity* theEdge, GaussIntegrator* theGaussIntegrator) const;
-
-  public:
-  
-  double                *deltaUp0;
-  double                **DInv;
-  double                *Up0;
-  double                *Rp0;
-  
-  short                 edgeOrientation[3];
-  void                  setType();///???
-  DGCell();
-  DGCell(ConservationLaw*, mEntity*, FunctionSpace*,FunctionSpace *, Mapping *,GaussIntegrator *);
-  virtual ~DGCell();
-  void cleanup();
-  volumeGaussPoint &  pt(int i) {return volumeGaussPoints[i];}
-  Mapping *getMapping(){return theMapping;}
-  FunctionSpace *getFunctionSpace(){return theFunctionSpace;}
-  ConservationLaw *getConservationLaw(){return theConservationLaw;}
-  mEntity* getMeshEntity(){return theMeshEntity;}
-  list<mEntity*> getAllNeighbors() {return allVert;} 
-  void computeVolumeContribution(double time);
-  void reverseVolumeContribution (double t);
-  void computeErrorVolumeContribution();
-  void computeErrorMassMatrices();
-  double advanceInTime(double dt);
-  double advanceErrorInTime(double dt);
-  void computeMean(); 
-  void computeErrorMean();
-  void setToZero(double t);
-  void adaptTimeStep (double CFLMAX, double &DT);
-  void adaptOrder(int order);
-  void L2Proj        (FieldEvaluator *f, double *proj);
-  void L2Proj (double* dU);
-  void L2ProjError    (FieldEvaluator *f, vector<double> &proj);
-  void L2ProjInitial (FieldEvaluator *f);
-  void L2ProjInitialError (FieldEvaluator *f);
-  virtual void L2ProjCutCell(){}
-  void invertErrorMassMatrices (); 
-  void ZeroRHS ()       // RESET RIGHT HAND SIDE
+    void computeMassMatrices();
+    void allocateErrorMassMatrices();
+    void allocateInvJacMatrix(){details->DInv=allocateMatrix(cSize);}
+    virtual void init();
+    double arclength(mEntity* theEdge, GaussIntegrator* theGaussIntegrator) const;
+    void setType(); ///???
+    DGCell();
+    DGCell(ConservationLaw*, mEntity*, FunctionSpace*,FunctionSpace *, Mapping *,GaussIntegrator *);
+    virtual ~DGCell();
+    void cleanup();
+    volumeGaussPoint &  pt(int i) {return volumeGaussPoints[i];}
+    Mapping *getMapping(){return details->theMapping;}
+    FunctionSpace *getFunctionSpace(){return details->theFunctionSpace;}
+    ConservationLaw *getConservationLaw(){return theConservationLaw;}
+    mEntity* getMeshEntity(){return theMeshEntity;}
+    list<mEntity*> getAllNeighbors() {return details->allVert;} 
+    void computeVolumeContribution(double time);
+    void reverseVolumeContribution (double t);
+    void computeErrorVolumeContribution();
+    void computeErrorMassMatrices();
+    double advanceInTime(double dt);
+    double advanceErrorInTime(double dt);
+    void computeMean(); 
+    void computeErrorMean();
+    void setToZero(double t);
+    void adaptTimeStep (double CFLMAX, double &DT);
+    void adaptOrder(int order);
+    void L2Proj        (FieldEvaluator *f, double *proj);
+    void L2Proj (double* dU);
+    void L2ProjError    (FieldEvaluator *f, vector<double> &proj);
+    void L2ProjInitial (FieldEvaluator *f);
+    void L2ProjInitialError (FieldEvaluator *f);
+    virtual void L2ProjCutCell(){}
+    void invertErrorMassMatrices (); 
+    void ZeroRHS ()       // RESET RIGHT HAND SIDE
     {
       const int s = cSize*fSize;
       for(int j=0;j<s;++j)  theRightHandSide[j]= 0.0;
     }
-  void ZeroErrorRHS ();
-  void ZeroError (); 
-  void ZeroJump ();
-  void ZeroFullJump() {fullJump=0.0;}
-  void ZeroErrorMassMatrices();
-  inline void interpolateError (double u,double v,double w, double *field); 
-  void dinterpolate (double u,  double v, double w, mVector *grads);  
-  double L1exact(double time);
-  double L2exact();
-  double L1approx();
-  double LinfError(double);
-  double L1exactPressure(double time);
-  double entropyErrorL1_2D(double time);
-  double entropyErrorL1_3D(double time);
-  double entropyErrorL2_2D(double time);
-  double entropyErrorL2_3D(double time);
-  double pressureErrorL2(double time);
-  double densityErrorL2(double time);
-  friend class DGBoundaryCell;
-  friend class CutBoundaryCell;
-  friend class CutCell;
-  friend class DGAnalysis;
-  friend class DGLimiter;
-  friend class DGSuperBee;
-  friend class DGBarthLimiter;
-  friend class DGBarthLimiterEuler;
-  friend class VertLimiter;
-  friend class DGVertexLimiter;
-  friend class DGVertexLimiterEuler;
-  friend class DGPhysicalLimiter;
-  friend class DGExpFilterLimiter;
-  friend class DGMomentLimiter;
-  friend class DGMomentLimiterEuler;
-  friend class TimeIntegrator;
-  friend class RungeKutta4;
-  friend class RungeKuttaTVD2;
-  friend class RungeKuttaTVD2adaptive;
-  friend class RungeKuttaTVD3;
-  friend class ForwardEuler;
-  friend class Multigrid;
-  void getBox(double &,double &,double &, double &,double &, double &);
-  bool inCell (const mPoint &, double *val); 
-  int limitStatus() const {return limit;}
-  double getError() const; 
-  void computeMaxH (); 
-  void computeMinH (); 
-  double getMaxH() const; 
-  double getMinH() const;
-  double getDetJac() const {return detJac;}
-  void computeVolume();
-  double getVolume() const {return volume;}
-  void computePerimeter();
-  double getPerimeter() const {return perimeter;}
-  double getJumpError() const;
- GaussIntegrator*  getGaussIntegrator(){return theGaussIntegrator;}
-  double computeMass();
-  double limiter() const {return limSlope[0];}
-  // write state of DGCell to stream
-  void write(ostream &);
-  // read state of DGCell from stream
-  void read(istream &);
-  void beginTimeStep(double);
-  void computeCellSize();
-  double getSize() {return cellSize;}
-  void setBinNb(int b) {binNb=b;}
-  short getBinNb() {return binNb;}
-  double computeMAXEV();
-  void computeTimeStep(double cfl)
+    void ZeroErrorRHS ();
+    void ZeroError (); 
+    void ZeroJump ();
+    void ZeroFullJump() {details->fullJump=0.0;}
+    void ZeroErrorMassMatrices();
+    inline void interpolateError (double u,double v,double w, double *field); 
+    void dinterpolate (double u,  double v, double w, mVector *grads);  
+    double L1exact(double time);
+    double L2exact();
+    double L1approx();
+    double LinfError(double);
+    double L1exactPressure(double time);
+    double entropyErrorL1_2D(double time);
+    double entropyErrorL1_3D(double time);
+    double entropyErrorL2_2D(double time);
+    double entropyErrorL2_3D(double time);
+    double pressureErrorL2(double time);
+    double densityErrorL2(double time);
+    friend class DGBoundaryCell;
+    friend class CutBoundaryCell;
+    friend class CutCell;
+    friend class DGAnalysis;
+    friend class DGLimiter;
+    friend class DGSuperBee;
+    friend class DGBarthLimiter;
+    friend class DGBarthLimiterEuler;
+    friend class VertLimiter;
+    friend class DGVertexLimiter;
+    friend class DGVertexLimiterEuler;
+    friend class DGPhysicalLimiter;
+    friend class DGExpFilterLimiter;
+    friend class DGMomentLimiter;
+    friend class DGMomentLimiterEuler;
+    friend class TimeIntegrator;
+    friend class RungeKutta4;
+    friend class RungeKuttaTVD2;
+    friend class RungeKuttaTVD2adaptive;
+    friend class RungeKuttaTVD3;
+    friend class ForwardEuler;
+    friend class Multigrid;
+    void getBox(double &,double &,double &, double &,double &, double &);
+    bool inCell (const mPoint &, double *val); 
+    int limitStatus() const {return details->limit;}
+    double getError() const; 
+    void computeMaxH (); 
+    void computeMinH (); 
+    double getMaxH() const; 
+    double getMinH() const;
+    double getDetJac() const {return details->detJac;}
+    void computeVolume();
+    double getVolume() const {return details->volume;}
+    void computePerimeter();
+    double getPerimeter() const {return details->perimeter;}
+    double getJumpError() const;
+    GaussIntegrator*  getGaussIntegrator(){return details->theGaussIntegrator;}
+    double computeMass();
+    double limiter() const {return details->limSlope[0];}
+    // write state of DGCell to stream
+    void write(ostream &);
+    // read state of DGCell from stream
+    void read(istream &);
+    void beginTimeStep(double);
+    void computeCellSize();
+    double getSize() {return details->cellSize;}
+    void setBinNb(int b) {details->binNb=b;}
+    short getBinNb() {return details->binNb;}
+    double computeMAXEV();
+    void computeTimeStep(double cfl)
     {
-       dt=cellSize*cfl/((2.*fOrder+1.)*computeMAXEV());
+       details->dt=details->cellSize*cfl/((2.*details->fOrder+1.)*computeMAXEV());
     }
-  double getTimeStep(){return dt;}
-  void setTimeStep(double t){dt = t;}
+    double getTimeStep(){return details->dt;}
+    void setTimeStep(double t){details->dt = t;}
   virtual void interpolateRefl(const double* fct, mVector &N, DGCell* reflCell, double *Q) const {
   double tmp=1.0;
   }
@@ -229,16 +231,16 @@ protected:
 
 class boundaryGaussPoint
 {
- protected:
-  boundaryGaussPoint& operator = (const boundaryGaussPoint &){return *this;}
-  boundaryGaussPoint(const boundaryGaussPoint &){}
- public:
-  boundaryGaussPoint();
-  ~boundaryGaussPoint();
-  double x,y,z,JacTimesWeight;
-  double *fctleft,*fctrght;
-  mVector N; // normal to the circle, approximating a curved boundary
-  mVector n; //normal to a curved edge
+protected:
+    boundaryGaussPoint& operator = (const boundaryGaussPoint &){return *this;}
+    boundaryGaussPoint(const boundaryGaussPoint &){}
+    public:
+    boundaryGaussPoint();
+    ~boundaryGaussPoint();
+    double x,y,z,JacTimesWeight;
+    double *fctleft,*fctrght;
+    mVector N; // normal to the circle, approximating a curved boundary
+    mVector n; //normal to a curved edge
 };
 
 class DGBoundaryCell : public mAttachableData
@@ -331,7 +333,7 @@ protected:
 inline void DGCell::interpolate(double u, double v, double w, double *field)
 {
   double fct[MaxNbFunctions]; 
-  theFunctionSpace->fcts(u,v,w,fct);
+  details->theFunctionSpace->fcts(u,v,w,fct);
   int i,j;
   double *tmp=field;
   const double *a =&(theFieldsCoefficients->theFieldsCoefficients[0])[0];

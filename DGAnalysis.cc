@@ -243,7 +243,7 @@ DGAnalysis::DGAnalysis(mDGMesh *m, ConservationLaw *c, DGLimiter *l, int order)
 	//cell->ZeroJump();
 	int k;
 	for(k=0;k<cell->theMeshEntity->size(n-1);k++)
-	  recurGetAllsubs(cell->theMeshEntity->get(n-1,k),cell->allSubs);
+	  recurGetAllsubs(cell->theMeshEntity->get(n-1,k),cell->details->allSubs);
 	/*int size0=m->size(0);
 	for(k=0;k<size0;k++)
 	  {
@@ -580,7 +580,7 @@ void DGAnalysis::sortCellsBySize()
 	      {
 		theMesh->addToBin(i-1,m);
 		cell->setBinNb(i-1);
-		cell->limit=i-1;
+		cell->details->limit=i-1;
 		//printf("cell %f in %f %f \n",cellSize, BB[i], BB[i-1]);
 		count[i-1]++;
 		//	if (i>1) m->print();

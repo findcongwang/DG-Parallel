@@ -21,40 +21,40 @@ extern void freeMatrix( double **v);
 
 void DGCell::allocateErrorMassMatrices ()
 {
-  freeMatrix(theErrorMassMatrix);
-  int Size = 2 * theFunctionSpace->order() + 3 ;	
+  freeMatrix(details->theErrorMassMatrix);
+  int Size = 2 * details->theFunctionSpace->order() + 3 ;	
   //  printf("size = %d\n",fSize);
 
-  theErrorMassMatrix = allocateMatrix(Size);
-  freeMatrix(theErrorInvertMassMatrix);
-  theErrorInvertMassMatrix = allocateMatrix(Size);
+  details->theErrorMassMatrix = allocateMatrix(Size);
+  freeMatrix(details->theErrorInvertMassMatrix);
+  details->theErrorInvertMassMatrix = allocateMatrix(Size);
   //print("Massorder = %d\n",order);
   
   for(int j=0;j<Size;j++)
       for(int k=0;k<Size;k++)
 	  {
-		 theErrorInvertMassMatrix[j][k] = 0.0;
-		 theErrorMassMatrix[j][k] = 0.0;
+		 details->theErrorInvertMassMatrix[j][k] = 0.0;
+		 details->theErrorMassMatrix[j][k] = 0.0;
 	  }
   for(int k=0;k<Size;k++)
   {
-	  theErrorInvertMassMatrix[k][k] = 1.0;
-	  theErrorMassMatrix[k][k] = 1.0;
+	  details->theErrorInvertMassMatrix[k][k] = 1.0;
+	  details->theErrorMassMatrix[k][k] = 1.0;
   }
 }
 
 void DGCell::computeErrorMassMatrices ()
 {
-	int Size = 2 * theFunctionSpace->order() + 3;
+	int Size = 2 * details->theFunctionSpace->order() + 3;
   /* for(int i=0;i<Size ;i++)
 	{
 		for(int j=0;j<Size ;j++)
-		printf(" %f ", theErrorMassMatrix[i][j] );
+		printf(" %f ", details->theErrorMassMatrix[i][j] );
 
 		printf("\n");
 	}  
 	printf("\n"); */ 
-	invmat(theErrorMassMatrix,theErrorInvertMassMatrix,Size);
+	invmat(details->theErrorMassMatrix,details->theErrorInvertMassMatrix,Size);
 }
 
 void DGCell::computeErrorVolumeContribution ()
@@ -62,13 +62,13 @@ void DGCell::computeErrorVolumeContribution ()
 /*
  // we compute int_{Cell} F(U +E) grad w dCell
   
-  int order = 3 * theErrorFunctionSpace->order() + theMapping->order() - 1;
+  int order = 3 * details->theErrorFunctionSpace->order() + details->theMapping->order() - 1;
   vector<mVector> grads;
   vector<double> functs;
-  int eSize = theErrorFunctionSpace->size();
-  int eOrder = theErrorFunctionSpace->pSize();
-  int fOrder = theFunctionSpace->pSize();
-  int fSize = theFunctionSpace->size();
+  int eSize = details->theErrorFunctionSpace->size();
+  int eOrder = details->theErrorFunctionSpace->pSize();
+  int fOrder = details->theFunctionSpace->pSize();
+  int fSize = details->theFunctionSpace->size();
   int cSize = theConservationLaw->nbFields();
  
   grads.reserve(eSize);
@@ -76,21 +76,21 @@ void DGCell::computeErrorVolumeContribution ()
   double u,v,w,weight,val[256],rhs[256], err[256];
   mPoint p;
 
-  theGaussIntegrator gauss(theMeshEntity);
+  details->theGaussIntegrator gauss(theMeshEntity);
   int i,j,k;
   for(i=0;i<gauss.nbIntegrationPoints(order);i++)
     {
-      theGaussIntegrator->iPoint(i,order,u,v,w,weight);
-      theErrorFunctionSpace->fcts(u,v,w,functs);
-      double detJac = theErrorFunctionSpace->grads(u,v,w,theMapping,grads);
+      details->theGaussIntegrator->iPoint(i,order,u,v,w,weight);
+      details->theErrorFunctionSpace->fcts(u,v,w,functs);
+      double detJac = details->theErrorFunctionSpace->grads(u,v,w,details->theMapping,grads);
       interpolate( u,v,w, val );
       interpolateError( u,v,w, err );
       for(j=0;j<cSize; j++)
       val[j]+=err[j] ; 
-      theMapping->eval(u,v,w,p(0),p(1),p(2));
+      details->theMapping->eval(u,v,w,p(0),p(1),p(2));
       //printf("val,u,v,w,p(0),p(1),p(2)  %f %f %f %f %f %f %f\n",val[0], u,v,w,p(0),p(1),p(2));
       theConservationLaw->RHS(val,p,rhs);
-      //printf("RHS in volume %d  %f\n", 2 , theErrorRightHandSide[2]);
+      //printf("RHS in volume %d  %f\n", 2 , details->theErrorRightHandSide[2]);
       for(j=0;j<cSize;j++)
 	{
 	  mVector flux;
@@ -98,7 +98,7 @@ void DGCell::computeErrorVolumeContribution ()
 	  // printf("flux (%d) = %f %f %f\n",j,flux(0),flux(1),flux(2));
 	  for( k=0;k<eOrder ;k++)
 
-	      theErrorRightHandSide[k+(eOrder+fOrder)*j] += (flux * 
+	      details->theErrorRightHandSide[k+(eOrder+fOrder)*j] += (flux * 
 							     grads[fSize+k]  + rhs[j] *functs[fSize+k]) * detJac * weight;
 	      
 	
@@ -128,29 +128,29 @@ void DGBoundaryCell::computeOrientation()
    for(int i=0;i<gauss.nbIntegrationPoints(order);i++)
     {
       gauss.iPoint(i,order,u,v,w,weight);
-      double detJac = theMapping->detJac(u,v,w);
+      double detJac = details->theMapping->detJac(u,v,w);
       left  ->interpolate(uleft[i],vleft[i],wleft[i],valleft);
       //   right ->interpolate(urght[i],vrght[i],wrght[i],valrght);
 
       // compute the normalvector
      if(left->theMeshEntity->find(theBoundaryEntity))
-	left->theMapping->normalVector(theBoundaryEntity,uleft[i],vleft[i],wleft[i],n); 
+	left->details->theMapping->normalVector(theBoundaryEntity,uleft[i],vleft[i],wleft[i],n); 
  
 
-  theMapping->eval(u,v,w,x,y,z);
+  details->theMapping->eval(u,v,w,x,y,z);
   int orient = left->theConservationLaw->getEdgeOrientation(n,mPoint(x,y,z),valleft);
  
   mEntity *f = left->theMeshEntity;
    for(int j=0;j<f->size(1);j++)
     {
       Edge *e = (Edge*) f->get(1,j);
-      if (e == theBoundaryEntity) left->edgeOrientation[j] = orient;		        if (mright)
+      if (e == theBoundaryEntity) left->details->edgeOrientation[j] = orient;		        if (mright)
      {
        f = right->theMeshEntity;
        for(int j=0;j<f->size(1);j++)
 	 {
 	   Edge *e = (Edge*) f->get(1,j);
-	   if (e == theBoundaryEntity) right->edgeOrientation[j] = !orient;
+	   if (e == theBoundaryEntity) right->details->edgeOrientation[j] = !orient;
 
 	 }
      }
@@ -176,20 +176,20 @@ void DGBoundaryCell::computeBoundaryRestrictions(double T)
   static vector<double>  fctleft;
   static vector<double>  fctrght;
   int cSize = left->theConservationLaw->nbFields();
-  int eSizeLeft = left->theErrorFunctionSpace->size();
-  int fSizeLeft = left->theFunctionSpace->size();
-  int fOrderLeft = left->theFunctionSpace->pSize();
-  int eOrderLeft = left->theErrorFunctionSpace->pSize();
+  int eSizeLeft = left->details->theErrorFunctionSpace->size();
+  int fSizeLeft = left->details->theFunctionSpace->size();
+  int fOrderLeft = left->details->theFunctionSpace->pSize();
+  int eOrderLeft = left->details->theErrorFunctionSpace->pSize();
   int fSizeRight = 0;
   int eSizeRight = 0;
   int eOrderRight =0;
   int fOrderRight =0;
   if(right)
     {
-      fSizeRight = right->theFunctionSpace->size();
-      eSizeRight = right->theErrorFunctionSpace->size();
-      fOrderRight = right->theFunctionSpace->pSize();
-      eOrderRight = right->theErrorFunctionSpace->pSize();
+      fSizeRight = right->details->theFunctionSpace->size();
+      eSizeRight = right->details->theErrorFunctionSpace->size();
+      fOrderRight = right->details->theFunctionSpace->pSize();
+      eOrderRight = right->details->theErrorFunctionSpace->pSize();
     }
   
   
@@ -204,25 +204,25 @@ void DGBoundaryCell::computeBoundaryRestrictions(double T)
       gauss.iPoint(i,order,u,v,w,weight);
       
       // get det jacobian
-      double detJac = theMapping->detJac(u,v,w);
+      double detJac = details->theMapping->detJac(u,v,w);
       
       // compute the normalvector
       if(left->theMeshEntity->find(theBoundaryEntity))
-	left->theMapping->normalVector(theBoundaryEntity,uleft_e[i],vleft_e[i],wleft_e[i],n);
+	left->details->theMapping->normalVector(theBoundaryEntity,uleft_e[i],vleft_e[i],wleft_e[i],n);
       else
 	{
 	  if(!right)printf("aaargh\n");
-	  right->theMapping->normalVector(theBoundaryEntity,urght_e[i],vrght_e[i],wrght_e[i],n);
+	  right->details->theMapping->normalVector(theBoundaryEntity,urght_e[i],vrght_e[i],wrght_e[i],n);
 	  n *= -1.0;
 	}
       //printf("normal %f %f \n", n(0),n(1));
       // get shape functions on both sides
-      left->theErrorFunctionSpace->fcts(uleft_e[i],vleft_e[i],wleft_e[i],fctleft);
+      left->details->theErrorFunctionSpace->fcts(uleft_e[i],vleft_e[i],wleft_e[i],fctleft);
       if(right)
-	right->theErrorFunctionSpace->fcts(urght_e[i],vrght_e[i],wrght_e[i],fctrght);
+	right->details->theErrorFunctionSpace->fcts(urght_e[i],vrght_e[i],wrght_e[i],fctrght);
       
       mPoint p;
-      theMapping->eval(u,v,w,p(0),p(1),p(2));
+      details->theMapping->eval(u,v,w,p(0),p(1),p(2));
       //       printf("u,v,w,p(0),p(1),p(2) %f %f %f %f %f %f\n", u,v,w,p(0),p(1),p(2));
       int j,k;
       left ->interpolate(uleft_e[i],vleft_e[i],wleft_e[i],valleft);
@@ -236,11 +236,11 @@ void DGBoundaryCell::computeBoundaryRestrictions(double T)
 	  for(j=0;j<fOrderLeft;j++)
 	    {
 	      for(k=0;k<eOrderLeft;k++)
-		left->theErrorMassMatrix [j+eOrderLeft][k] += detJac * 
+		left->details->theErrorMassMatrix [j+eOrderLeft][k] += detJac * 
 		  normalVelocity  *  fctleft[eSizeLeft-eOrderLeft+k] * 
 		  fctleft[eSizeLeft-eOrderLeft-fOrderLeft+j] * weight;
 	      for(k=0;k<fOrderLeft;k++)
-		left->theErrorMassMatrix [j+eOrderLeft][k+eOrderLeft] +=detJac * normalVelocity * 
+		left->details->theErrorMassMatrix [j+eOrderLeft][k+eOrderLeft] +=detJac * normalVelocity * 
 		fctleft[eSizeLeft+k-fOrderLeft-eOrderLeft] * 
 		fctleft[eSizeLeft-eOrderLeft-fOrderLeft+j] * weight;
 	    }
@@ -255,13 +255,13 @@ void DGBoundaryCell::computeBoundaryRestrictions(double T)
 	    {
 	      for(k=0;k<eOrderRight;k++)
 		{
-		  right->theErrorMassMatrix [j+eOrderRight][k] += detJac * normalVelocity * 
+		  right->details->theErrorMassMatrix [j+eOrderRight][k] += detJac * normalVelocity * 
 		    fctrght[eSizeRight-eOrderRight+k] * 
 		    fctrght[eSizeRight-eOrderRight-fOrderRight+j] * weight;
 		  
 		}
 	      for(k=0;k<fOrderRight;k++)
-		right->theErrorMassMatrix [j+eOrderRight][k+eOrderRight] += detJac * normalVelocity * 
+		right->details->theErrorMassMatrix [j+eOrderRight][k+eOrderRight] += detJac * normalVelocity * 
 		  fctrght[eSizeRight+k-fOrderRight-eOrderRight] * 
 		  fctrght[eSizeRight-eOrderRight-fOrderRight+j] * weight;
 	    }
@@ -269,7 +269,7 @@ void DGBoundaryCell::computeBoundaryRestrictions(double T)
     }
   //  for (int k=0; k<eOrderLeft+ fOrderLeft; k++)
   //  for (int j=0; j<eOrderLeft+ fOrderLeft;j++)
-  //    printf("err mass %d %f \n", k,left->theErrorMassMatrix[k][j]);
+  //    printf("err mass %d %f \n", k,left->details->theErrorMassMatrix[k][j]);
 */
 }
 
@@ -302,15 +302,15 @@ int cSize = left->theConservationLaw->nbFields();
      gauss.iPoint(i,order,u,v,w,weight);
      
      // get det jacobian
-     double detJac = theMapping->detJac(u,v,w);
+     double detJac = details->theMapping->detJac(u,v,w);
      
      // compute the normalvector
      if(left->theMeshEntity->find(theBoundaryEntity))
-       left->theMapping->normalVector(theBoundaryEntity,uleft_e[i],vleft_e[i],wleft_e[i],n);
+       left->details->theMapping->normalVector(theBoundaryEntity,uleft_e[i],vleft_e[i],wleft_e[i],n);
      else
        {
 	 if(!right)printf("aaargh\n");
-	 right->theMapping->normalVector(theBoundaryEntity,urght_e[i],vrght_e[i],wrght_e[i],n);
+	 right->details->theMapping->normalVector(theBoundaryEntity,urght_e[i],vrght_e[i],wrght_e[i],n);
 	 n *= -1.0;
        }
      // get solutions on both sides
@@ -326,12 +326,12 @@ int cSize = left->theConservationLaw->nbFields();
        right->interpolateError(urght_e[i],vrght_e[i],wrght_e[i],erright);
      
 	 //mPoint p;
-    theMapping->eval(u,v,w,p(0),p(1),p(2));
+    details->theMapping->eval(u,v,w,p(0),p(1),p(2));
      int j,k;
 	 orient = left->theConservationLaw->getEdgeOrientation(n,p,valleft);
       double normalVelocity=0;
      if (right && orient!=-1) 
-		 right->jumpError+=erright[0]*detJac*weight;
+		 right->details->jumpError+=erright[0]*detJac*weight;
 
 if ((p(0) +p(1)<=1.001) && (p(0) +p(1)>=0.999)) 
 {
@@ -362,7 +362,7 @@ if ((p(0) +p(1)<=1.001) && (p(0) +p(1)>=0.999))
 
  double DGCell::getJumpError() const
  {
- return jumpError;
+ return details->jumpError;
  }
 
 void DGBoundaryCell::computeErrorBoundaryContributions(double T)
@@ -381,20 +381,20 @@ double riemann[256];
 static vector<double>  fctleft;
 static vector<double>  fctrght;
 int cSize = left->theConservationLaw->nbFields();
-int eSizeLeft = left->theErrorFunctionSpace->size();
-int fSizeLeft = left->theFunctionSpace->size();
-int fOrderLeft = left->theFunctionSpace->pSize();
-int eOrderLeft = left->theErrorFunctionSpace->pSize();
+int eSizeLeft = left->details->theErrorFunctionSpace->size();
+int fSizeLeft = left->details->theFunctionSpace->size();
+int fOrderLeft = left->details->theFunctionSpace->pSize();
+int eOrderLeft = left->details->theErrorFunctionSpace->pSize();
 int fSizeRight = 0;
 int eSizeRight = 0;
 int eOrderRight =0;
 int fOrderRight =0;
 if(right)
 {
-  fSizeRight = right->theFunctionSpace->size();
-  eSizeRight = right->theErrorFunctionSpace->size();
-  fOrderRight = right->theFunctionSpace->pSize();
-  eOrderRight = right->theErrorFunctionSpace->pSize();
+  fSizeRight = right->details->theFunctionSpace->size();
+  eSizeRight = right->details->theErrorFunctionSpace->size();
+  fOrderRight = right->details->theFunctionSpace->pSize();
+  eOrderRight = right->details->theErrorFunctionSpace->pSize();
   
 }
  
@@ -412,23 +412,23 @@ if(right)
      gauss.iPoint(i,order,u,v,w,weight);
      
      // get det jacobian
-     double detJac = theMapping->detJac(u,v,w);
+     double detJac = details->theMapping->detJac(u,v,w);
      
      // compute the normalvector
      if(left->theMeshEntity->find(theBoundaryEntity))
-       left->theMapping->normalVector(theBoundaryEntity,uleft_e[i],vleft_e[i],wleft_e[i],n);
+       left->details->theMapping->normalVector(theBoundaryEntity,uleft_e[i],vleft_e[i],wleft_e[i],n);
      else
        {
 	 if(!right)printf("aaargh\n");
-	 right->theMapping->normalVector(theBoundaryEntity,urght_e[i],vrght_e[i],wrght_e[i],n);
+	 right->details->theMapping->normalVector(theBoundaryEntity,urght_e[i],vrght_e[i],wrght_e[i],n);
 	 n *= -1.0;
        }
      //     printf("\n");
      //printf("normal vector %f %f  \n",n[0],n[1]);
      // get shape functions on both sides
-     left->theErrorFunctionSpace->fcts(uleft_e[i],vleft_e[i],wleft_e[i],fctleft);
+     left->details->theErrorFunctionSpace->fcts(uleft_e[i],vleft_e[i],wleft_e[i],fctleft);
      if(right)
-       right->theErrorFunctionSpace->fcts(urght_e[i],vrght_e[i],wrght_e[i],fctrght);
+       right->details->theErrorFunctionSpace->fcts(urght_e[i],vrght_e[i],wrght_e[i],fctrght);
      
      // get solutions on both sides
      left ->interpolate(uleft_e[i],vleft_e[i],wleft_e[i],valleft);
@@ -445,7 +445,7 @@ if(right)
        right->interpolateError(urght_e[i],vrght_e[i],wrght_e[i],erright);
      //if(right) printf("erright %f \n",erright[0]);
      mPoint p;
-     theMapping->eval(u,v,w,p(0),p(1),p(2));
+     details->theMapping->eval(u,v,w,p(0),p(1),p(2));
      int j,k;
      for(j=0;j<cSize; j++)
        {
@@ -457,7 +457,7 @@ if(right)
      // the coupling : a riemann solver
      if(right)
 	 {
-		 computeErrorMaxIV(n, left->theErrorMean, right->theErrorMean);
+		 computeErrorMaxIV(n, left->details->theErrorMean, right->details->theErrorMean);
 		 double maxEIV = getErrorMaxIV();
        left->theConservationLaw->riemannSolver (n,p,valleft,valrght,riemann);
 	 }
@@ -473,13 +473,13 @@ if(right)
 	 {
 	 for(k=0;k<eOrderLeft;k++)
 	   {
-	     left->theErrorRightHandSide[k+(fOrderLeft+eOrderLeft)*j] -= 
+	     left->details->theErrorRightHandSide[k+(fOrderLeft+eOrderLeft)*j] -= 
 	       (riemann[j]*fctleft[fSizeLeft + k]) * detJac * weight;
 	     //     printf("riemann[j]*fctleft[fSizeLeft + k] * detJac * weight %f %f %f  \n", riemann[j],fctleft[fSizeLeft + k] ,riemann[j]*fctleft[fSizeLeft + k] * detJac * weight );  
 	   }
 	 	 if(right)
 	   for(k=0;k<eOrderRight;k++)
-	     right->theErrorRightHandSide[(eOrderRight+fOrderRight)*j+k] += 
+	     right->details->theErrorRightHandSide[(eOrderRight+fOrderRight)*j+k] += 
 	     (riemann[j]*fctrght[fSizeRight+k]) * detJac * weight;
        }
    }
@@ -489,29 +489,29 @@ if(right)
 
 void DGCell::setType()
 {
-  if ( edgeOrientation[0] == 1 && edgeOrientation[1] == 0 && 
-       edgeOrientation[2] ==0) {type = 1; return;}
-  if ( edgeOrientation[0] == 0 && edgeOrientation[1] == 1 && 
-       edgeOrientation[2] ==0) {type = 2; return;}
-  if ( edgeOrientation[0] == 0 && edgeOrientation[1] == 0 && 
-       edgeOrientation[2] ==0) {type = 3; return;}
-  if ( edgeOrientation[1] == 1 && edgeOrientation[2] == 1)  
-        {type = 4; return;}
-  if ( edgeOrientation[0] == 1 && edgeOrientation[1] == 1 )  
-        {type = 5; return;}     
-  if ( edgeOrientation[0] == 1 && edgeOrientation[2] == 1 ) 
-        {type = 6; return;}
+  if ( details->edgeOrientation[0] == 1 && details->edgeOrientation[1] == 0 && 
+       details->edgeOrientation[2] ==0) {details->type = 1; return;}
+  if ( details->edgeOrientation[0] == 0 && details->edgeOrientation[1] == 1 && 
+       details->edgeOrientation[2] ==0) {details->type = 2; return;}
+  if ( details->edgeOrientation[0] == 0 && details->edgeOrientation[1] == 0 && 
+       details->edgeOrientation[2] ==0) {details->type = 3; return;}
+  if ( details->edgeOrientation[1] == 1 && details->edgeOrientation[2] == 1)  
+        {details->type = 4; return;}
+  if ( details->edgeOrientation[0] == 1 && details->edgeOrientation[1] == 1 )  
+        {details->type = 5; return;}     
+  if ( details->edgeOrientation[0] == 1 && details->edgeOrientation[2] == 1 ) 
+        {details->type = 6; return;}
 }
 
 void DGCell::interpolateError(double u, double v, double w, double *field)
 {
-int eSize = theErrorFunctionSpace->size();
-int fSize = theFunctionSpace->size();
-int fOrder = theFunctionSpace->pSize();
-int eOrder = theErrorFunctionSpace->pSize();
+int eSize = details->theErrorFunctionSpace->size();
+int fSize = details->theFunctionSpace->size();
+int fOrder = details->theFunctionSpace->pSize();
+int eOrder = details->theErrorFunctionSpace->pSize();
 double  *fct;
   fct = new double [eSize];  
-  theErrorFunctionSpace->fcts(u,v,w,fct);
+  details->theErrorFunctionSpace->fcts(u,v,w,fct);
   int i, j ;	
   for(i=0;i<cSize;i++)
     {
@@ -522,7 +522,7 @@ double  *fct;
     {
         for(i=0; i<cSize; i++)
 	{
-	  field[i] += (fct[j+fSize] * (theErrorCoefficients[i])[j]);
+	  field[i] += (fct[j+fSize] * (details->theErrorCoefficients[i])[j]);
 	}
     }
 
@@ -530,7 +530,7 @@ double  *fct;
     {
       for(i=0;i<cSize;i++)
 	{
-	  field[i] += (fct[j+fSize-fOrder] * (theErrorCoefficients[i])[j+eOrder]); 
+	  field[i] += (fct[j+fSize-fOrder] * (details->theErrorCoefficients[i])[j+eOrder]); 
 	}
     }
   delete [] fct;
@@ -539,10 +539,10 @@ double  *fct;
  int DGBoundaryCell::computeErrorOrder(DGCell *left, DGCell *right) const
   {
    if(right)
-    return        3 * ((left->theErrorFunctionSpace->order()>right->theErrorFunctionSpace->order()) ?
- 	   left->theErrorFunctionSpace->order()  :right->theErrorFunctionSpace->order()) + theMapping->detJacOrder() ;
+    return  3 * ((left->details->theErrorFunctionSpace->order()>right->details->theErrorFunctionSpace->order()) ?
+ 	   left->details->theErrorFunctionSpace->order()  :right->details->theErrorFunctionSpace->order()) + theMapping->detJacOrder() ;
     else
-    return 3*(left->theErrorFunctionSpace->order())+ theMapping->detJacOrder() +4;
+    return 3*(left->details->theErrorFunctionSpace->order())+ theMapping->detJacOrder() +4;
   }
 
 
@@ -691,7 +691,7 @@ double DGCell::entropyErrorL2_2D(double time)
   double val[MaxNbEqn],val_ex[MaxNbEqn];
   double ent_error,p,p_ex;
   
-  int order = 2*(theFunctionSpace->order()+1);
+  int order = 2*(details->theFunctionSpace->order()+1);
   double u,v,w,weight,x,y,z;
   GaussIntegrator gauss;
   int Nb = gauss.nbIntegrationPoints(theMeshEntity,order);
@@ -699,8 +699,8 @@ double DGCell::entropyErrorL2_2D(double time)
   for(int i=0;i<Nb;i++)
     {
       gauss.iPoint(theMeshEntity,i,order,u,v,w,weight);
-      double detJac = theMapping->detJac(u,v,w); 
-      theMapping->eval(u,v,w,x,y,z);
+      double detJac = details->theMapping->detJac(u,v,w); 
+      details->theMapping->eval(u,v,w,x,y,z);
            
       interpolate(u,v,w,val); 
       mPoint pos(x,y,z);
@@ -721,7 +721,7 @@ double DGCell::entropyErrorL2_3D(double time)
   double val[MaxNbEqn],val_ex[MaxNbEqn];
   double ent_error,p,p_ex;
   
-  int order = 2*(theFunctionSpace->order()+1);
+  int order = 2*(details->theFunctionSpace->order()+1);
   double u,v,w,weight,x,y,z;
   GaussIntegrator gauss;
   int Nb = gauss.nbIntegrationPoints(theMeshEntity,order);
@@ -729,8 +729,8 @@ double DGCell::entropyErrorL2_3D(double time)
   for(int i=0;i<Nb;i++)
     {
       gauss.iPoint(theMeshEntity,i,order,u,v,w,weight);
-      double detJac = theMapping->detJac(u,v,w); 
-      theMapping->eval(u,v,w,x,y,z);
+      double detJac = details->theMapping->detJac(u,v,w); 
+      details->theMapping->eval(u,v,w,x,y,z);
            
       interpolate(u,v,w,val); 
       mPoint pos(x,y,z);
@@ -778,7 +778,7 @@ double DGCell::pressureErrorL2(double time)
   double val[MaxNbEqn],val_ex[MaxNbEqn];
   double pres_error,p,p_ex;
   
-  int order = 2*(theFunctionSpace->order()+1);
+  int order = 2*(details->theFunctionSpace->order()+1);
   double u,v,w,weight,x,y,z;
   GaussIntegrator gauss;
   int Nb = gauss.nbIntegrationPoints(theMeshEntity,order);
@@ -786,8 +786,8 @@ double DGCell::pressureErrorL2(double time)
   for(int i=0;i<Nb;i++)
     {
       gauss.iPoint(theMeshEntity,i,order,u,v,w,weight);
-      double detJac = theMapping->detJac(u,v,w); 
-      theMapping->eval(u,v,w,x,y,z);
+      double detJac = details->theMapping->detJac(u,v,w); 
+      details->theMapping->eval(u,v,w,x,y,z);
            
       interpolate(u,v,w,val); 
       mPoint pos(x,y,z);
@@ -809,7 +809,7 @@ double DGCell::densityErrorL2(double time)
   double val[MaxNbEqn],val_ex[MaxNbEqn];
     double dens_error;
   
-  int order = 2*(theFunctionSpace->order()+1);
+  int order = 2*(details->theFunctionSpace->order()+1);
   double u,v,w,weight,x,y,z;
   GaussIntegrator gauss;
   int Nb = gauss.nbIntegrationPoints(theMeshEntity,order);
@@ -817,8 +817,8 @@ double DGCell::densityErrorL2(double time)
   for(int i=0;i<Nb;i++)
     {
       gauss.iPoint(theMeshEntity,i,order,u,v,w,weight);
-      double detJac = theMapping->detJac(u,v,w); 
-      theMapping->eval(u,v,w,x,y,z);
+      double detJac = details->theMapping->detJac(u,v,w); 
+      details->theMapping->eval(u,v,w,x,y,z);
            
       interpolate(u,v,w,val); 
       mPoint pos(x,y,z);
@@ -852,7 +852,7 @@ double DGBoundaryCell::totalPressure(double &length)
   double val[MaxNbEqn],exact[MaxNbEqn];
   double p,p_total,p_total_inf,p_inf,time=0.;
   
-  int order = 2*(left->theFunctionSpace->order()+1) + left->theMapping->detJacOrder() +2;
+  int order = 2*(left->details->theFunctionSpace->order()+1) + left->details->theMapping->detJacOrder() +2;
   double u,v,w,weight,x,y,z,uleft,vleft,wleft;
   GaussIntegrator gauss;
   int Nb = gauss.nbIntegrationPoints(theBoundaryEntity,order);
@@ -861,7 +861,7 @@ double DGBoundaryCell::totalPressure(double &length)
       gauss.iPoint(theBoundaryEntity,i,order,u,v,w,weight);
       double detJac = theMapping->detJac(u,v,w); 
       theMapping->eval(u,v,w,x,y,z);
-      left->theMapping->invert(x,y,z,uleft,vleft,wleft);
+      left->details->theMapping->invert(x,y,z,uleft,vleft,wleft);
       
       left->interpolate(uleft,vleft,wleft,val); 
       mPoint pos(x,y,z);
@@ -980,14 +980,14 @@ void DGBoundaryCell::computeTotalPressureAtAPoint(int &nbPoints,double *x, doubl
 
 double DGCell::L1approx() 
 {
-  int order = theErrorFunctionSpace->order() + theMapping->detJacOrder() + 6;
+  int order = details->theErrorFunctionSpace->order() + details->theMapping->detJacOrder() + 6;
   double u,v,w,weight,err[3];
   double error = 0;
-  int Nb = theGaussIntegrator->nbIntegrationPoints(theMeshEntity,order);
+  int Nb = details->theGaussIntegrator->nbIntegrationPoints(theMeshEntity,order);
   for(int i=0;i<Nb;i++)
     {
-      theGaussIntegrator->iPoint(theMeshEntity,i,order,u,v,w,weight);
-      double detJac = theMapping->detJac(u,v,w);
+      details->theGaussIntegrator->iPoint(theMeshEntity,i,order,u,v,w,weight);
+      double detJac = details->theMapping->detJac(u,v,w);
       interpolateError(u,v,w,err);
       error+= fabs( err[0])  * detJac * weight;
     }
@@ -1030,7 +1030,7 @@ if(pg->y<0.001)
 double DGCell::advanceErrorInTime (double dt)
 {
 /*
-  int n = 2 * theFunctionSpace->order() + 3 ;
+  int n = 2 * details->theFunctionSpace->order() + 3 ;
 
   double resid = 0.0;
 
@@ -1041,14 +1041,14 @@ double DGCell::advanceErrorInTime (double dt)
 		 double dx = 0.0;
 	  for(int j = 0;j<n;j++)
 	    {
-	      dx += theErrorInvertMassMatrix[i][j] * theErrorRightHandSide[j+n*k];
-	      ///printf("invert mass %d %d  %f\n",i,j, theErrorInvertMassMatrix[i][j]);
-	      //  printf("Error RHS %d %f \n",j, theErrorRightHandSide[j+n*k]);
+	      dx += details->theErrorInvertMassMatrix[i][j] * details->theErrorRightHandSide[j+n*k];
+	      ///printf("invert mass %d %d  %f\n",i,j, details->theErrorInvertMassMatrix[i][j]);
+	      //  printf("Error RHS %d %f \n",j, details->theErrorRightHandSide[j+n*k]);
 	    }
 	  //	  printf("dx (%d,%d) = %12.5E resid = %12.5E\n",i,k,dx,resid);
 	  resid += dx*dx;
-	  (theErrorCoefficients[k])[i] += dt * dx;
-	  //printf("(theErrorCoefficients[k])[i]  %f \n",(theErrorCoefficients[k])[i] );
+	  (details->theErrorCoefficients[k])[i] += dt * dx;
+	  //printf("(details->theErrorCoefficients[k])[i]  %f \n",(details->theErrorCoefficients[k])[i] );
 	}
     }
 */
@@ -1059,40 +1059,40 @@ return 0.0;
 void DGCell::ZeroErrorRHS ()
 {
   // RESET Error RIGHT HAND SIDE
-  int fSize = 2 * theFunctionSpace->order() + 3 ;
+  int fSize = 2 * details->theFunctionSpace->order() + 3 ;
   for(int j=0;j<theConservationLaw->getNbFields();j++)
       for(int k=0;k<fSize;k++)
-		 theErrorRightHandSide[k+fSize*j] = 0.0;
+		 details->theErrorRightHandSide[k+fSize*j] = 0.0;
 }
 
 
 void DGCell::L2ProjError (FieldEvaluator *f, vector<double> &proj)
 {
-  int order = f->order() + theErrorFunctionSpace->order() +4 + theMapping->detJacOrder() ;
+  int order = f->order() + details->theErrorFunctionSpace->order() +4 + details->theMapping->detJacOrder() ;
   // printf("order in projector %d \n", order);
   double u,v,w,weight,val[256],exact[256],x,y,z;
   double *fct;
  
   int cSize = theConservationLaw->getNbFields();
-  int fSize = theFunctionSpace->size();
-  int eSize = theErrorFunctionSpace->size();
-  int eOrder = theErrorFunctionSpace->pSize();
-  int fOrder = theFunctionSpace->pSize();
+  int fSize = details->theFunctionSpace->size();
+  int eSize = details->theErrorFunctionSpace->size();
+  int eOrder = details->theErrorFunctionSpace->pSize();
+  int fOrder = details->theFunctionSpace->pSize();
   fct = new double [eSize];
   
    proj.reserve(cSize * (eOrder + fOrder));
   int i, j, k;
   for(i=0;i<cSize * (fOrder + eOrder);i++) proj[i] = 0.0;
-  int Nb = theGaussIntegrator->nbIntegrationPoints(theMeshEntity,order);
+  int Nb = details->theGaussIntegrator->nbIntegrationPoints(theMeshEntity,order);
   for(i=0;i<Nb;i++)
     {
-      theGaussIntegrator->iPoint(theMeshEntity,i,order,u,v,w,weight);
-      double detJac = theMapping->detJac(u,v,w);    
-      theMapping->eval(u,v,w,x,y,z);
+      details->theGaussIntegrator->iPoint(theMeshEntity,i,order,u,v,w,weight);
+      double detJac = details->theMapping->detJac(u,v,w);    
+      details->theMapping->eval(u,v,w,x,y,z);
       f->eval(mPoint(x,y,z),0.0,exact);
       interpolate(u,v,w,val);
       //printf("gp %f %f %f %f %f %f\n",u,v,detJac,x,y,val[0]);
-      theErrorFunctionSpace->fcts(u,v,w,fct);
+      details->theErrorFunctionSpace->fcts(u,v,w,fct);
       for(j=0;j<cSize;j++)
 	{
 	  for(k=0;k<eOrder;k++)
@@ -1127,10 +1127,10 @@ void DGCell::L2ProjInitialError (FieldEvaluator *f)
   //  double val[256];
   for(int i=0;i<theConservationLaw->getNbFields();i++)
     {
-      for(int j=0;j< (2 * theFunctionSpace->order() + 3);j++)
-		  (theErrorCoefficients[i])[j] = 0;
+      for(int j=0;j< (2 * details->theFunctionSpace->order() + 3);j++)
+		  (details->theErrorCoefficients[i])[j] = 0;
     }
-  L2ProjError(f,theErrorRightHandSide);
+  L2ProjError(f,details->theErrorRightHandSide);
   advanceErrorInTime(1.0);
  
   //interpolateError(0,0,0,val);
@@ -1139,15 +1139,15 @@ void DGCell::L2ProjInitialError (FieldEvaluator *f)
 
 void DGCell::ZeroErrorMassMatrices()
 {
-	int eSize = theErrorFunctionSpace->pSize();
-	int fSize = theFunctionSpace->pSize();
+	int eSize = details->theErrorFunctionSpace->pSize();
+	int fSize = details->theFunctionSpace->pSize();
 	int j,k;
 	  for( k=0;k<eSize + fSize;k++)
 		for(j=0;j<eSize + fSize;j++)
-	      theErrorMassMatrix [k][j] = 0.0;
+	      details->theErrorMassMatrix [k][j] = 0.0;
 
 	for(k=0;k<eSize;k++)
-		theErrorMassMatrix [k][k] = 1.0;
+		details->theErrorMassMatrix [k][k] = 1.0;
 }
 
 void DGCell::computeErrorMean ()
@@ -1155,23 +1155,23 @@ void DGCell::computeErrorMean ()
   double u,v,w,weight,val[256],err[256],vol;
  
   int i,j; 
-  int order = theErrorFunctionSpace->order() + theMapping->detJacOrder();
-  for(i=0;i<theConservationLaw->getNbFields();i++)theMean[i] = 0.0;
+  int order = details->theErrorFunctionSpace->order() + details->theMapping->detJacOrder();
+  for(i=0;i<theConservationLaw->getNbFields();i++)details->theMean[i] = 0.0;
   vol = 0.0;
-  int Nb = theGaussIntegrator->nbIntegrationPoints(theMeshEntity,order);
+  int Nb = details->theGaussIntegrator->nbIntegrationPoints(theMeshEntity,order);
     for(i=0;i<Nb;i++)
     {
-      theGaussIntegrator->iPoint(theMeshEntity,i,order,u,v,w,weight);
-      double detJac = theMapping->detJac(u,v,w);
+      details->theGaussIntegrator->iPoint(theMeshEntity,i,order,u,v,w,weight);
+      double detJac = details->theMapping->detJac(u,v,w);
       interpolate( u,v,w, val );
 	  interpolateError(u,v,w,err);
       for(j=0;j<theConservationLaw->getNbFields();j++)
 		  val[j]+=err[j];
       vol += detJac*weight;
-      for(j=0;j<theConservationLaw->getNbFields();j++)theErrorMean[j] +=
+      for(j=0;j<theConservationLaw->getNbFields();j++)details->theErrorMean[j] +=
                                 weight*detJac*val[j];
     }
-  for(j=0;j<theConservationLaw->getNbFields();j++)theErrorMean[j] /= vol;
+  for(j=0;j<theConservationLaw->getNbFields();j++)details->theErrorMean[j] /= vol;
 }
 
 void DGBoundaryCell::computeFullJump()
@@ -1190,8 +1190,8 @@ void DGBoundaryCell::computeFullJump()
 	- right->theConservationLaw->jumpQuantity(valrght); 
       error += (jump*jump*jump*jump) * pg->JacTimesWeight;
     }
-  left->fullJump += error;
-  right->fullJump += error;
+  left->details->fullJump += error;
+  right->details->fullJump += error;
  }
 
 void DGBoundaryCell :: IndicatorGrad (double *denoms, double *numers) const

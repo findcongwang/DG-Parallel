@@ -79,7 +79,7 @@ $(LIB): $(OBJ)
 	 ar r $(LIB) $(OBJ) 
 
 .cc.o:
-	$(CPP) $(CC_FLAGS) -c $< 
+	$(CPP) $(CC_FLAGS) -w -c $< 
 
 clean:
 	$(RM) $(RMFLAGS) $(OBJ)

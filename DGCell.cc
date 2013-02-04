@@ -45,64 +45,69 @@ DGCell::DGCell (ConservationLaw*l,
 		FunctionSpace *er,
 		Mapping *m,
 		GaussIntegrator *I)
-  : theConservationLaw(l),theMeshEntity(e),theFunctionSpace(f),
-    theMapping(m),theGaussIntegrator(I)
+  : theConservationLaw(l),theMeshEntity(e)
 {
-  //theGeometry = g;
-  int i;
-  fSize                 = f->size();
-  fOrder                = f->order();
-  cSize                 = l->getNbFields();
-  theFieldsCoefficients = new DG_Dofs(2,cSize,fSize);
-  theMean               = new double[cSize];
-  limSlope              = new double[cSize];
-  theRightHandSide      = new double [fSize*cSize];
-  deltaUp0              = new double[cSize];
-  Up0                   = new double[cSize];
-  Rp0                   = new double[cSize];
-  
-  for(i=0;i<cSize;++i)
-    for(int j=0;j<fSize;++j) theFieldsCoefficients->get(i,j) = 0.;
-  limit = 0;
-  order = 2 * fOrder + theMapping->detJacOrder();
+    details = new DGCell_ColdFields();
+    details->theFunctionSpace = f;
+    details->theMapping = m;
+    details->theGaussIntegrator = I;
 
-  theInvertMassMatrix = 0;
-  init();
-  
-  pMin = pMax = ((Vertex*)theMeshEntity->get(0,0))->point();
-  int Size0 = theMeshEntity->size(0);
-  for(i=1;i<Size0;++i)
+    //theGeometry = g;
+    int i;
+    fSize                 = f->size();
+    details->fOrder       = f->order();
+    cSize                 = l->getNbFields();
+    theFieldsCoefficients = new DG_Dofs(2,cSize,fSize);
+    details->theMean      = new double[cSize];
+    details->limSlope     = new double[cSize];
+    theRightHandSide      = new double [fSize*cSize];
+    details->deltaUp0     = new double[cSize];
+    details->Up0          = new double[cSize];
+    details->Rp0          = new double[cSize];
+
+    for(i=0;i<cSize;++i)
+    for(int j=0;j<fSize;++j) theFieldsCoefficients->get(i,j) = 0.;
+    details->limit = 0;
+    details->order = 2 * details->fOrder + details->theMapping->detJacOrder();
+
+    details->theInvertMassMatrix = 0;
+    init();
+
+    details->pMin = details->pMax = ((Vertex*)theMeshEntity->get(0,0))->point();
+    int Size0 = theMeshEntity->size(0);
+    for(i=1;i<Size0;++i)
     {
-      mPoint p1 = ((Vertex*)theMeshEntity->get(0,i))->point();
-      if (p1(0) < pMin(0)) pMin(0) = p1(0);
-      if (p1(1) < pMin(1)) pMin(1) = p1(1);
-      if (p1(2) < pMin(2)) pMin(2) = p1(2);
-      if (p1(0) > pMax(0)) pMax(0) = p1(0);
-      if (p1(1) > pMax(1)) pMax(1) = p1(1);
-      if (p1(2) > pMax(2)) pMax(2) = p1(2);
+        mPoint p1 = ((Vertex*)theMeshEntity->get(0,i))->point();
+        if (p1(0) < details->pMin(0)) details->pMin(0) = p1(0);
+        if (p1(1) < details->pMin(1)) details->pMin(1) = p1(1);
+        if (p1(2) < details->pMin(2)) details->pMin(2) = p1(2);
+        if (p1(0) > details->pMax(0)) details->pMax(0) = p1(0);
+        if (p1(1) > details->pMax(1)) details->pMax(1) = p1(1);
+        if (p1(2) > details->pMax(2)) details->pMax(2) = p1(2);
     }
 
-  computeCellSize();
-  computeVolume();
-  computePerimeter();
-  ZeroError();
-  computeMaxH();
+    computeCellSize();
+    computeVolume();
+    computePerimeter();
+    ZeroError();
+    computeMaxH();
 }
 
 DGCell::~DGCell ()
 {
-  delete theFieldsCoefficients;
-  delete [] theMean;
-  delete [] limSlope;
-  delete [] theRightHandSide;
-  delete theFunctionSpace;
-  freeMatrix(theInvertMassMatrix);
+    delete theFieldsCoefficients;
+    delete [] details->theMean;
+    delete [] details->limSlope;
+    delete [] theRightHandSide;
+    delete details->theFunctionSpace;
+    freeMatrix(details->theInvertMassMatrix);
+    delete details;
 }
 
 void DGCell::cleanup()
 {
-  delete theMapping;
-  theMapping = 0;
+  delete details->theMapping;
+  details->theMapping = 0;
 }
 
 volumeGaussPoint::volumeGaussPoint (const volumeGaussPoint &other)
@@ -123,17 +128,17 @@ void DGCell::init ()
 {
   int i,j,k;
   double** theMassMatrix;
-  if (!theFunctionSpace->isOrthogonal())
+  if (!details->theFunctionSpace->isOrthogonal())
     {
-      freeMatrix(theInvertMassMatrix);
+      freeMatrix(details->theInvertMassMatrix);
       theMassMatrix       = allocateMatrix(fSize);
-      theInvertMassMatrix = allocateMatrix(fSize);
+      details->theInvertMassMatrix = allocateMatrix(fSize);
       for(j=0;j<fSize;++j)
 	for(k=0;k<fSize;++k)
 	  theMassMatrix[j][k] = 0.0;
     }
   
-  nbPtGauss = theGaussIntegrator->nbIntegrationPoints(theMeshEntity,order);
+  nbPtGauss = details->theGaussIntegrator->nbIntegrationPoints(theMeshEntity,details->order);
   volumeGaussPoints.reserve(nbPtGauss);
   //volumeGaussPoints.resize( nbPtGauss );
   int VP = volumeGaussPoints.size();
@@ -143,22 +148,22 @@ void DGCell::init ()
   for(i=0;i<nbPtGauss;++i)
     {
       volumeGaussPoint pg;
-	  theGaussIntegrator->iPoint(theMeshEntity,i,order,u,v,w,weight);
+	  details->theGaussIntegrator->iPoint(theMeshEntity,i,details->order,u,v,w,weight);
 	 // u=0;v=1;w=0;
-      theMapping->eval(u,v,w,pg.x,pg.y,pg.z);
+      details->theMapping->eval(u,v,w,pg.x,pg.y,pg.z);
       pg.grads.reserve(fSize);
       pg.grads.resize(fSize);
-      detJac = theFunctionSpace->grads(u,v,w,theMapping,pg.grads);
-      pg.JacTimesWeight = detJac*weight;
+      details->detJac = details->theFunctionSpace->grads(u,v,w,details->theMapping,pg.grads);
+      pg.JacTimesWeight = details->detJac*weight;
       for(j=0;j<fSize;++j) pg.grads[j] *= (pg.JacTimesWeight);
       //values of basis functions at (u,v,w)
-      //theFunctionSpace->fcts(u,v,w,pg.fcts);
-      pg.fcts=theGaussIntegrator->iFct(theMeshEntity,theFunctionSpace,i,order); 
+      //details->theFunctionSpace->fcts(u,v,w,pg.fcts);
+      pg.fcts=details->theGaussIntegrator->iFct(theMeshEntity,details->theFunctionSpace,i,details->order); 
       volumeGaussPoints.push_back(pg);
 		//volumeGaussPoints[ i ] = pg;
 
       ///Computing the Mass Matrix
-      if (!theFunctionSpace->isOrthogonal())
+      if (!details->theFunctionSpace->isOrthogonal())
 	{
 	  for( j=0;j<fSize;++j) {
 	    for( k=0;k<fSize;++k){
@@ -169,111 +174,108 @@ void DGCell::init ()
 	  }
 	}
     }
-  if (!theFunctionSpace->isOrthogonal())
+  if (!details->theFunctionSpace->isOrthogonal())
     {
-      invmat(theMassMatrix,theInvertMassMatrix,fSize);
+      invmat(theMassMatrix,details->theInvertMassMatrix,fSize);
       freeMatrix(theMassMatrix);
     }
 }
 
 void DGCell::computeVolumeContribution (double t)
 {
-  // we compute int_{Cell} F grad w dCell
-  int i,j,k;
-  double rhs[MaxNbEqn];
-  double *RHS;
-  double val[MaxNbEqn];
-  mVector fluxes[MaxNbEqn];
- 
-  for(i=0;i<nbPtGauss;++i)
+    // we compute int_{Cell} F grad w dCell
+    int i,j,k;
+    double rhs[MaxNbEqn];
+    double *RHS;
+    double val[MaxNbEqn];
+    mVector fluxes[MaxNbEqn];
+
+    for(i = 0; i < nbPtGauss; ++i)
     {
-      volumeGaussPoint  &pg = pt(i);
-      interpolate(pg.fcts, val);
-      
-      if(!theConservationLaw->isPhysical(val))
-	{
-	  printf("non physical field found in VOLUME integral at point (%f,%f,%f) \n",pg.x, pg.y, pg.z ); 
-	  //  printf("%f %f %f %f\n",val[0],val[1],val[2],val[3]);
-	  double p;
-	  int dim = theMeshEntity->getLevel();
-	  if (dim==2)
-	    p = (0.4)*(val[3]-0.5*(val[1]*val[1]+val[2]*val[2])/val[0]);
-	  else 
-	    p = (0.4)*(val[3]-0.5*(val[1]*val[1]+val[2]*val[2]+val[4]*val[4])/val[0]);
-	  printf("rho=%e p=%e \n",val[0],p);
-	  
-	 
-	  for(j=0;j<cSize;++j)
-	    for (k=1;k<fSize;++k)
-	      theFieldsCoefficients->get(j,k)= 0.0;
-	  interpolate(pg.fcts, val);
-	  if (dim==2)
-	    p = (0.4)*(val[3]-0.5*(val[1]*val[1]+val[2]*val[2])/val[0]);
-	  else 
-	    p = (0.4)*(val[3]-0.5*(val[1]*val[1]+val[2]*val[2]+val[4]*val[4])/val[0]);
-	  printf("Corrected values rho=%e p=%e \n",val[0],p);
-	  if (p<0) exit(0);
-	  ZeroRHS();
-	  computeVolumeContribution(t);
-	  break;
-	}
-      else
-	{
-	  const mPoint p(pg.x,pg.y,pg.z);  
-	  theConservationLaw->RHS(val,p,t,rhs);
-	  theConservationLaw->Fi(p,val,fluxes);
-	  RHS = theRightHandSide;
-	  const double *fcts = pg.fcts;
-	  const double *rhs_const =rhs;
-	  double tmp=0;
-	  for(j=0;j<cSize;++j)
-	    for(k=0;k<fSize;++k)		    
-		{
-	      (*RHS++)+= fluxes[j] *pg.grads[k]  + rhs_const[j] * fcts[k]*pg.JacTimesWeight;
-	 //    for(int m=0;m<3;++m) printf("%e\n",pg.grads[k](m)); printf("\n");
-		  //tmp+= fluxes[j] *pg.grads[k]  + rhs_const[j] * fcts[k]*pg.JacTimesWeight; //TEST
-		}
-		//printf("\n volume contribution rhs = %e \n",tmp); //TEST
-	}
+        volumeGaussPoint  &pg = pt(i);
+        interpolate(pg.fcts, val);
+
+        if(!theConservationLaw->isPhysical(val))
+        {
+            printf("non physical field found in VOLUME integral at point (%f,%f,%f) \n",pg.x, pg.y, pg.z ); 
+            //  printf("%f %f %f %f\n",val[0],val[1],val[2],val[3]);
+            double p;
+            int dim = theMeshEntity->getLevel();
+            if (dim==2)
+                p = (0.4)*(val[3]-0.5*(val[1]*val[1]+val[2]*val[2])/val[0]);
+            else 
+                p = (0.4)*(val[3]-0.5*(val[1]*val[1]+val[2]*val[2]+val[4]*val[4])/val[0]);
+            printf("rho=%e p=%e \n",val[0],p);
+
+            for(j=0;j<cSize;++j)
+                for (k=1;k<fSize;++k)
+                    theFieldsCoefficients->get(j,k) = 0.0;
+            interpolate(pg.fcts, val);
+            if (dim==2)
+                p = (0.4)*(val[3]-0.5*(val[1]*val[1]+val[2]*val[2])/val[0]);
+            else 
+                p = (0.4)*(val[3]-0.5*(val[1]*val[1]+val[2]*val[2]+val[4]*val[4])/val[0]);
+            printf("Corrected values rho=%e p=%e \n",val[0],p);
+            if (p<0) exit(0);
+            ZeroRHS();
+            computeVolumeContribution(t);
+            break;
+        }
+        else
+        {
+            const mPoint p(pg.x,pg.y,pg.z);  
+            theConservationLaw->RHS(val,p,t,rhs);
+            theConservationLaw->Fi(p,val,fluxes);
+            RHS = theRightHandSide;
+            const double *fcts = pg.fcts;
+            const double *rhs_const =rhs;
+            double tmp=0;
+            for(j = 0; j < cSize; ++j)
+                for(k = 0; k < fSize; ++k)		    
+                {
+                    (*RHS++)+= fluxes[j] *pg.grads[k]  + rhs_const[j] * fcts[k]*pg.JacTimesWeight;
+                //    for(int m=0;m<3;++m) printf("%e\n",pg.grads[k](m)); printf("\n");
+                //tmp+= fluxes[j] *pg.grads[k]  + rhs_const[j] * fcts[k]*pg.JacTimesWeight; //TEST
+                }
+                //printf("\n details->volume contribution rhs = %e \n",tmp); //TEST
+        }
     }
- // printf("\n in volume \n");
-  //for(j=0;j<3;++j) printf("%e\n",theRightHandSide[j]);
+    // printf("\n in details->volume \n");
+    //for(j=0;j<3;++j) printf("%e\n",theRightHandSide[j]);
     /*for(j=0;j<cSize;++j)
-	    for (k=0;k<fSize;++k)
-	      printf("%e\n",theFieldsCoefficients->get(j,k));*/
-	//printf("\n"); 
+    for (k=0;k<fSize;++k)
+    printf("%e\n",theFieldsCoefficients->get(j,k));*/
+    //printf("\n"); 
 }
 
 void DGCell::reverseVolumeContribution (double t)
 {
-  // we compute int_{Cell} F grad w dCell
-  int i,j,k;
-  double rhs[MaxNbEqn];
-  double *RHS;
-  double val[MaxNbEqn];
-  mVector fluxes[MaxNbEqn];
- 
-  for(i=0;i<nbPtGauss;++i)
+    // we compute int_{Cell} F grad w dCell
+    int i,j,k;
+    double rhs[MaxNbEqn];
+    double *RHS;
+    double val[MaxNbEqn];
+    mVector fluxes[MaxNbEqn];
+
+    for(i=0;i<nbPtGauss;++i)
     {
-      volumeGaussPoint  &pg = pt(i);
-      interpolate(pg.fcts, val);
-      
-      const mPoint p(pg.x,pg.y,pg.z);  
-      theConservationLaw->RHS(val,p,t,rhs);
-      theConservationLaw->Fi(p,val,fluxes);
-      RHS = theRightHandSide;
-      const double *fcts = pg.fcts;
-      const double *rhs_const =rhs;
-      double tmp=0;
-      for(j=0;j<cSize;++j)
-	for(k=0;k<fSize;++k)
-	{
-	  (*RHS++)-= fluxes[j] *pg.grads[k]  + rhs_const[j] * fcts[k]*pg.JacTimesWeight;
-   
-	}
+        volumeGaussPoint  &pg = pt(i);
+        interpolate(pg.fcts, val);
+        const mPoint p(pg.x,pg.y,pg.z);  
+        theConservationLaw->RHS(val,p,t,rhs);
+        theConservationLaw->Fi(p,val,fluxes);
+        RHS = theRightHandSide;
+        const double *fcts = pg.fcts;
+        const double *rhs_const =rhs;
+        double tmp=0;
+        for(j = 0; j < cSize; ++j)
+            for(k = 0; k < fSize; ++k)  
+            {
+                (*RHS++)-= fluxes[j] *pg.grads[k]  + rhs_const[j] * fcts[k]*pg.JacTimesWeight;
+            }
     }
-  //printf("\n");
-  //for(j=0;j<9;++j) printf("%e\n",theRightHandSide[j]);
+    //printf("\n");
+    //for(j=0;j<9;++j) printf("%e\n",theRightHandSide[j]);
 }
 
 void DGCell::dinterpolate(double u, double v, double w, mVector *grads)
@@ -283,7 +285,7 @@ void DGCell::dinterpolate(double u, double v, double w, mVector *grads)
 
   vector<mVector>  gr;
   gr.reserve(fSize);  
-  theFunctionSpace->grads(u,v,w,theMapping,gr);
+  details->theFunctionSpace->grads(u,v,w,details->theMapping,gr);
 
   mVector g = gr[0];
   for(int i=0;i<cSize;++i)
@@ -304,7 +306,7 @@ void DGCell::dinterpolate(double u, double v, double w, mVector *grads)
     
 double DGCell::getError() const
 {
-	return sqrt(error);
+	return sqrt(details->error);
 }
 
 
@@ -320,7 +322,7 @@ mPoint p0 =((Vertex*)theMeshEntity->get(0,0))->point();
 	  if (h * h < v*v) h = sqrt(v*v);
 	  p0 = p1;
 	 } 	  
-  maxH = h;
+  details->maxH = h;
 }
 
 void DGCell::computeMinH()
@@ -335,17 +337,17 @@ mPoint p0 =((Vertex*)theMeshEntity->get(0,0))->point();
 	  if (h > v*v) h = v*v;
 	  p0 = p1;
 	 } 
-  minH = h;
+  details->minH = h;
 }
 
 double DGCell::getMaxH() const
 {
-	return maxH;
+	return details->maxH;
 }
 
 double DGCell::getMinH() const
 {
-	return minH;
+	return details->minH;
 }
 
 /************ B O U N D A R Y   T E R M S *************/
@@ -406,9 +408,9 @@ DGBoundaryCell::~DGBoundaryCell ()
 int DGBoundaryCell::computeOrder() const
 {
   if(right) return 
-      2 * ((left->fOrder>right->fOrder) ?
-	  left->fOrder : right->fOrder) +  theMapping->detJacOrder()+1;
-  else return 2*(left->fOrder) + theMapping->detJacOrder()+1;
+      2 * ((left->details->fOrder>right->details->fOrder) ?
+	  left->details->fOrder : right->details->fOrder) +  theMapping->detJacOrder()+1;
+  else return 2*(left->details->fOrder) + theMapping->detJacOrder()+1;
 }
 
 
@@ -469,7 +471,7 @@ void DGBoundaryCell::init()
 	 
       theMapping->eval(u,v,w,pg->x,pg->y,pg->z);
       
-      if(!left->theMapping->invert(pg->x,pg->y,pg->z,uleft,vleft,wleft))
+      if(!left->details->theMapping->invert(pg->x,pg->y,pg->z,uleft,vleft,wleft))
 	{
 	  printf("l : impossible to compute invert mapping in ");theBoundaryEntity->print();
 	  for(int ip=0;ip<theBoundaryEntity->size(0);ip++)
@@ -477,7 +479,7 @@ void DGBoundaryCell::init()
 	}
       
       if(right)
-	if(!right->theMapping->invert(pg->x,pg->y,pg->z,urght,vrght,wrght))
+	if(!right->details->theMapping->invert(pg->x,pg->y,pg->z,urght,vrght,wrght))
 	  {
 	    printf("r : impossible to compute invert mapping in ");theBoundaryEntity->print();
 	    for(int ip=0;ip<theBoundaryEntity->size(0);ip++)
@@ -488,7 +490,7 @@ void DGBoundaryCell::init()
       // get the normal vector
       
       if(left->theMeshEntity->find(theBoundaryEntity))
-	left->theMapping->normalVector(theBoundaryEntity,uleft,vleft,wleft,pg->n);
+	left->details->theMapping->normalVector(theBoundaryEntity,uleft,vleft,wleft,pg->n);
       else
 	{
 	  //	  printf("computing normal in the complex way  :  ");
@@ -502,7 +504,7 @@ void DGBoundaryCell::init()
 		{
 		  if(*it == theBoundaryEntity)
 		    {
-		      left->theMapping->normalVector(initial,uleft,vleft,wleft,pg->n);
+		      left->details->theMapping->normalVector(initial,uleft,vleft,wleft,pg->n);
 		     		      //printf("%f %f %f %f\n",n(0),n(1),pg->x,pg->y);
 		      found = true;
 		      break;
@@ -521,7 +523,7 @@ void DGBoundaryCell::init()
       pg->JacTimesWeight = detJac * weight;
       // get shape functions on both sides
       pg->fctleft = new double[lSize];
-      left->theFunctionSpace->fcts(uleft,vleft,wleft,pg->fctleft);
+      left->details->theFunctionSpace->fcts(uleft,vleft,wleft,pg->fctleft);
       //printf("Nb of Gauss points= %d, nb of functions= %d \n", nbPtGauss,lSize); 
     /*  printf("{");
       for (q=0; q<lSize; q++) 
@@ -529,19 +531,19 @@ void DGBoundaryCell::init()
 	else printf("%17.16e}, \n", pg->fctleft[q]);*/
       
 	 double* ff=0;
-	 ff = left->theFunctionSpace->fcts(left->fOrder,qleft,i);
-     //pg->fctleft = left->theFunctionSpace->fcts(left->fOrder,qleft,i);
+	 ff = left->details->theFunctionSpace->fcts(left->details->fOrder,qleft,i);
+     //pg->fctleft = left->details->theFunctionSpace->fcts(left->details->fOrder,qleft,i);
 	//for(j=0;j<rSize; j++) if (fabs (pg->fctleft[j]-ff[j])>0.000000001) printf (" left %d  %d %d %e %e \n",q, i, j, pg->fctleft[j],ff[j]);
 	//for(q=0;q<2; q++) printf (" left %e %e \n",pg->fctleft[q],ff[q]);
 	//printf("\n");
       if(right)
 	{
 		pg->fctrght = new double [rSize];
-	 right->theFunctionSpace->fcts(urght,vrght,wrght,pg->fctrght); 
+	 right->details->theFunctionSpace->fcts(urght,vrght,wrght,pg->fctrght); 
 	
       
-     //pg->fctrght = right->theFunctionSpace->fcts(right->fOrder,qright,i);
-	//  ff = right->theFunctionSpace->fcts(right->fOrder,qright,i);
+     //pg->fctrght = right->details->theFunctionSpace->fcts(right->details->fOrder,qright,i);
+	//  ff = right->details->theFunctionSpace->fcts(right->details->fOrder,qright,i);
 	 // for(j=0;j<rSize; j++) if (fabs (pg->fctrght[j]-ff[j])>0.000000001) printf (" right %d %d %d %e %e \n",q, i, j, pg->fctrght[j],ff[j]);
     /*for(q=0;q<2; q++) printf (" right %e %e \n",pg->fctright[q],ff[q]);
 	printf("\n");*/
@@ -565,12 +567,12 @@ void DGBoundaryCell::setPeriodicBC()
 	boundaryGaussPoint *pg = pt(i);      
 	mPoint p(pg->x,pg->y,pg->z);
 	if (theBoundaryEntity->getClassification()->getId()==510)
-	  another->theMapping->invert(-pg->x,pg->y,pg->z,urght,vrght,wrght);
+	  another->details->theMapping->invert(-pg->x,pg->y,pg->z,urght,vrght,wrght);
 	if (theBoundaryEntity->getClassification()->getId()==610)
-	  another->theMapping->invert(pg->x,-pg->y,pg->z,urght,vrght,wrght);
+	  another->details->theMapping->invert(pg->x,-pg->y,pg->z,urght,vrght,wrght);
 
 	pg->fctrght = new double [rSize];
-	another->theFunctionSpace->fcts(urght,vrght,wrght,pg->fctrght); 
+	another->details->theFunctionSpace->fcts(urght,vrght,wrght,pg->fctrght); 
 	}
 }
 
@@ -586,11 +588,11 @@ void DGBoundaryCell::computeError()
       left  ->interpolate(pg->fctleft,valleft);
       right ->interpolate(pg->fctrght,valrght);
       double jump = left->theConservationLaw->jumpQuantity(valleft)
-	- right->theConservationLaw->jumpQuantity(valrght); 
+	                       - right->theConservationLaw->jumpQuantity(valrght); 
       error += (jump*jump) * pg->JacTimesWeight;
     }
-  left->error += error;
-  right->error += error;
+  left->details->error += error;
+  right->details->error += error;
 }
 
 void DGBoundaryCell::computeJump()
@@ -598,37 +600,37 @@ void DGBoundaryCell::computeJump()
 /*  if(!mright)return;
   DGCell *left = (DGCell*)mleft->getCell();
   DGCell *right = (DGCell*)mright->getCell();
-  int order = computeOrder(left,right);
+  int details->order = computeOrder(left,right);
   double u,v,w,weight,valleft[MaxNbEqn],valrght[MaxNbEqn];
-  double jump = 0;
+  double details->jump = 0;
   mVector n;
   
-  for(int i=0;i< theGaussIntegrator.nbIntegrationPoints(theBoundaryEntity,order);++i)
+  for(int i=0;i< details->theGaussIntegrator.nbIntegrationPoints(theBoundaryEntity,details->order);++i)
     {
-      theGaussIntegrator.iPoint(theBoundaryEntityi,order,u,v,w,weight);
-      double detJac = theMapping->detJac(u,v,w);
+      details->theGaussIntegrator.iPoint(theBoundaryEntityi,details->order,u,v,w,weight);
+      double details->detJac = details->theMapping->details->detJac(u,v,w);
 
       left  ->interpolate(uleft[i],vleft[i],wleft[i],valleft);
 	 
 	  right ->interpolate(urght[i],vrght[i],wrght[i],valrght);
       //printf("%e %e \n", valleft, valrght);
   if(left->theMeshEntity->find(theBoundaryEntity))
-	left->theMapping->normalVector(theBoundaryEntity,uleft_e[i],vleft_e[i],wleft_e[i],n);
+	left->details->theMapping->normalVector(theBoundaryEntity,uleft_e[i],vleft_e[i],wleft_e[i],n);
      else
 	{
 	  if(!right)printf("aaargh\n");
-	  right->theMapping->normalVector(theBoundaryEntity,urght_e[i],vrght_e[i],wrght_e[i],n);
+	  right->details->theMapping->normalVector(theBoundaryEntity,urght_e[i],vrght_e[i],wrght_e[i],n);
 	  n *= -1.0;
 	}
       mPoint p;
-      theMapping->eval(u,v,w,p(0),p(1),p(2));
+      details->theMapping->eval(u,v,w,p(0),p(1),p(2));
       int orient = left->theConservationLaw->getEdgeOrientation(n,p,valleft);
 	  if (orient == 1) 
 	  {
-		  left->jump+= (valrght[0] - valleft[0]) * detJac * weight;
+		  left->details->jump+= (valrght[0] - valleft[0]) * details->detJac * weight;
 	  }
-	  else if(right) right->jump +=(valrght[0] - valleft[0]) * detJac * weight;
-	  //printf(" %e %e %e %e %e \n", valrght[0], valleft[0], detJac, weight,(valrght - valleft) * detJac * weight);
+	  else if(right) right->details->jump +=(valrght[0] - valleft[0]) * details->detJac * weight;
+	  //printf(" %e %e %e %e %e \n", valrght[0], valleft[0], details->detJac, weight,(valrght - valleft) * details->detJac * weight);
 	  
   }
   */
@@ -636,149 +638,147 @@ void DGBoundaryCell::computeJump()
 
 int DGBoundaryCell::computeBoundaryContributions(double T)
 {
-  int i,j,k;
-  int nonPhysical = 0;
-  double riemann[MaxNbEqn];
-  boundaryGaussPoint *pg;
-  double valleft[MaxNbEqn],valrght[MaxNbEqn];
-   
-  for(i=0;i<nbPtGauss;++i)
-    {
-      pg = pt(i);      
-      mPoint p(pg->x,pg->y,pg->z);
-      left ->interpolate(pg->fctleft, valleft);
-      if(!left->theConservationLaw->isPhysical(valleft))
-	{
-	  printf("non physical field found on an EDGE/FACE at point (%f,%f,%f)\n",pg->x,pg->y,pg->z); 
-	  double p;
-	  int dim = left->theMeshEntity->getLevel();
-	  if (dim==2)
-	    p = (0.4)*(valleft[3]-0.5*(valleft[1]*valleft[1]+valleft[2]*valleft[2])/valleft[0]);
-	  else 
-	    p = (0.4)*(valleft[3]-0.5*(valleft[1]*valleft[1]+valleft[2]*valleft[2]+valleft[4]*valleft[4])/valleft[0]);
-	  printf("rho=%e p=%e \n",valleft[0],p);
-	  printf("Boundary Id =  %d \n",theBoundaryEntity->getClassification()->getId());
- 	  nonPhysical =1;
-	}
+    int i,j,k;
+    int nonPhysical = 0;
+    double riemann[MaxNbEqn];
+    boundaryGaussPoint *pg;
+    double valleft[MaxNbEqn],valrght[MaxNbEqn];
 
-      if (right)
-	  {
-	right ->interpolate(pg->fctrght, valrght);
-	
-	if(!right->theConservationLaw->isPhysical(valrght))
-	  {
-	    printf("non physical field found (right) on an edge at point (%f,%f,%f)\n",pg->x,pg->y,pg->z); 
-	    double p;
-	    int dim = left->theMeshEntity->getLevel();
-	    if (dim==2)
-	      p= (0.4)*(valrght[3]-0.5*(valrght[1]*valrght[1] +valrght[2]*valrght[2])/valrght[0]);
-	    else
-	      p= (0.4)*(valrght[3]-0.5*(valrght[1]*valrght[1] +valrght[2]*valrght[2]+valrght[4]*valrght[4])/valrght[0]);
-	    printf("rho = %e p = %e \n",valrght[0],p);
-	    printf("Id =  %d \n",theBoundaryEntity->getClassification()->getId());
-	    if (nonPhysical==1) nonPhysical = 3;
-	    else nonPhysical = 2;
-	  }
-	  }
-  //Periodic boundary conditions
-  if (theBoundaryEntity->getClassification()->getId()==610 || theBoundaryEntity->getClassification()->getId()==510)
+    for(i=0;i<nbPtGauss;++i)
     {
-      mEntity* ent=theBoundaryEntity->getAttachedEntity(TYPE_CELL);
-      DGBoundaryCell *symm = (DGBoundaryCell *)ent->getCell();
-      DGCell* another = symm->left; 
-	  another->interpolate(pg->fctrght, valrght);
-    }	
+        pg = pt(i);
+        mPoint p(pg->x,pg->y,pg->z);
+        left ->interpolate(pg->fctleft, valleft);
+        if(!left->theConservationLaw->isPhysical(valleft))
+        {
+            printf("non physical field found on an EDGE/FACE at point (%f,%f,%f)\n",pg->x,pg->y,pg->z); 
+            double p;
+            int dim = left->theMeshEntity->getLevel();
+            if (dim==2)
+                p = (0.4)*(valleft[3]-0.5*(valleft[1]*valleft[1]+valleft[2]*valleft[2])/valleft[0]);
+            else 
+                p = (0.4)*(valleft[3]-0.5*(valleft[1]*valleft[1]+valleft[2]*valleft[2]+valleft[4]*valleft[4])/valleft[0]);
+            printf("rho=%e p=%e \n",valleft[0],p);
+            printf("Boundary Id =  %d \n",theBoundaryEntity->getClassification()->getId());
+            nonPhysical =1;
+        }
 
-      if(right)      //inner cell
-	left->theConservationLaw->
-	  riemannSolver (pg->n,p,valleft,valrght,riemann);
-      // or boundary conditions
-      else
-	if(theBoundaryEntity->getClassification()->getId()==20000) 
-	  left->theConservationLaw->boundary (pg->n,pg->N,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
-//	else if (theBoundaryEntity->getClassification()->getId()==50000)
-	//	left->theConservationLaw->boundarySource (pg->n,pg->N,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
-	else if (theBoundaryEntity->getClassification()->getId()==510 || theBoundaryEntity->getClassification()->getId()==610) 
-	  left->theConservationLaw->riemannSolver(pg->n,p,valleft,valrght,riemann);
-	else left->theConservationLaw->boundaryFlux (pg->n,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
-      
-	//printf("%f %f %f %f %f \n",riemann[0],riemann[1],riemann[2],riemann[3],riemann[4]); 
-      // left and right contributions
-      double *RHS_LEFT = left->theRightHandSide;
-      const double *RIEMANN = riemann;
-      const double *FUNCTION_LEFT  = pg->fctleft;
-	  double tmp=0;
-      for(j=0;j<cSize;++j)
-		  for(k=0;k<lSize;++k)
-		  {
-	  (*(RHS_LEFT++)) -= RIEMANN[j]*FUNCTION_LEFT[k]*pg->JacTimesWeight;
-tmp-=RIEMANN[j]*FUNCTION_LEFT[k]*pg->JacTimesWeight;
-		  }
-	 // printf("\n RHS_LEFT from boundary = %e \n",tmp); //TEST
-	 // printf("\n in boundary: \n"); for(k=0;k<lSize;++k) printf("%e \n", left->theRightHandSide[k]); printf("\n");
-      if (right)
-	{
-	  double  *RHS_RIGHT = right->theRightHandSide;
-	  const double *FUNCTION_RIGHT  = pg->fctrght;  
-	  for(j=0;j<cSize;++j)
-	    for(k=0;k<rSize;++k)
-	      (*(RHS_RIGHT++)) += RIEMANN[j]*FUNCTION_RIGHT[k]*pg->JacTimesWeight;
-	}
+        if (right)
+        {
+            right ->interpolate(pg->fctrght, valrght);
+
+            if(!right->theConservationLaw->isPhysical(valrght))
+            {
+                printf("non physical field found (right) on an edge at point (%f,%f,%f)\n",pg->x,pg->y,pg->z); 
+                double p;
+                int dim = left->theMeshEntity->getLevel();
+                if (dim==2)
+                    p = (0.4)*(valrght[3]-0.5*(valrght[1]*valrght[1] +valrght[2]*valrght[2])/valrght[0]);
+                else
+                    p = (0.4)*(valrght[3]-0.5*(valrght[1]*valrght[1] +valrght[2]*valrght[2]+valrght[4]*valrght[4])/valrght[0]);
+                printf("rho = %e p = %e \n",valrght[0],p);
+                printf("Id =  %d \n",theBoundaryEntity->getClassification()->getId());
+                if (nonPhysical==1) nonPhysical = 3;
+                else nonPhysical = 2;
+            }
+        }
+
+        //Periodic boundary conditions
+        if (theBoundaryEntity->getClassification()->getId()==610 || theBoundaryEntity->getClassification()->getId()==510)
+        {
+            mEntity* ent=theBoundaryEntity->getAttachedEntity(TYPE_CELL);
+            DGBoundaryCell *symm = (DGBoundaryCell *)ent->getCell();
+            DGCell* another = symm->left; 
+            another->interpolate(pg->fctrght, valrght);
+        }	
+
+        if(right)      //inner cell
+            left->theConservationLaw->riemannSolver (pg->n,p,valleft,valrght,riemann);
+        // or boundary conditions
+        else
+        if(theBoundaryEntity->getClassification()->getId()==20000) 
+            left->theConservationLaw->boundary (pg->n,pg->N,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
+        //	else if (theBoundaryEntity->getClassification()->getId()==50000)
+        //	left->theConservationLaw->boundarySource (pg->n,pg->N,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
+        else if (theBoundaryEntity->getClassification()->getId()==510 || theBoundaryEntity->getClassification()->getId()==610) 
+            left->theConservationLaw->riemannSolver(pg->n,p,valleft,valrght,riemann);
+        else left->theConservationLaw->boundaryFlux (pg->n,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
+
+        //printf("%f %f %f %f %f \n",riemann[0],riemann[1],riemann[2],riemann[3],riemann[4]); 
+        // left and right contributions
+        double *RHS_LEFT = left->theRightHandSide;
+        const double *RIEMANN = riemann;
+        const double *FUNCTION_LEFT  = pg->fctleft;
+        double tmp=0;
+        for(j = 0; j < cSize; ++j)
+            for(k = 0; k < lSize; ++k)
+            {
+                (*(RHS_LEFT++)) -= RIEMANN[j]*FUNCTION_LEFT[k]*pg->JacTimesWeight;
+                tmp-=RIEMANN[j]*FUNCTION_LEFT[k]*pg->JacTimesWeight;
+            }
+        // printf("\n RHS_LEFT from boundary = %e \n",tmp); //TEST
+        // printf("\n in boundary: \n"); for(k=0;k<lSize;++k) printf("%e \n", left->theRightHandSide[k]); printf("\n");
+        if (right)
+        {
+            double  *RHS_RIGHT = right->theRightHandSide;
+            const double *FUNCTION_RIGHT  = pg->fctrght;  
+            for(j = 0; j < cSize; ++j)
+                for(k = 0; k < rSize; ++k)
+                    (*(RHS_RIGHT++)) += RIEMANN[j]*FUNCTION_RIGHT[k]*pg->JacTimesWeight;
+        }
     }
-//  printf("---------");
-  return nonPhysical;
+    //  printf("---------");
+    return nonPhysical;
 }
 
 void DGBoundaryCell::reverseBoundaryContributions(double T)
 {
-  int i,j,k;
-  double riemann[MaxNbEqn];
-  boundaryGaussPoint *pg;
-  double valleft[MaxNbEqn],valrght[MaxNbEqn];
-  
-  for(i=0;i<nbPtGauss;++i)
+    int i,j,k;
+    double riemann[MaxNbEqn];
+    boundaryGaussPoint *pg;
+    double valleft[MaxNbEqn],valrght[MaxNbEqn];
+
+    for(i=0;i<nbPtGauss;++i)
     {
-      pg= pt(i);      
-      left ->interpolate(pg->fctleft, valleft);
-      if(right) right ->interpolate(pg->fctrght, valrght);
-      
-      //Periodic boundary conditions
-      if (theBoundaryEntity->getClassification()->getId()==610 || theBoundaryEntity->getClassification()->getId()==510)
-	{
-	  mEntity* ent=theBoundaryEntity->getAttachedEntity(TYPE_CELL);
-	  DGBoundaryCell *symm = (DGBoundaryCell *)ent->getCell();
-	  DGCell* another = symm->left; 
-	  another->interpolate(pg->fctrght, valrght);
-	}
-      
-      mPoint p(pg->x,pg->y,pg->z);
-      if(right)      //inner cell
-	left->theConservationLaw->riemannSolver(pg->n,p,valleft,valrght,riemann);
-      // or boundary conditions
-      else
-	if(theBoundaryEntity->getClassification()->getId()==20000) 
-	  left->theConservationLaw->boundary (pg->n,pg->N,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
-	else if (theBoundaryEntity->getClassification()->getId()==510 || theBoundaryEntity->getClassification()->getId()==610) 
-	  left->theConservationLaw->riemannSolver(pg->n,p,valleft,valrght,riemann);
-	else left->theConservationLaw->boundaryFlux (pg->n,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
-      
-      
-      // left and right contributions
-      double *RHS_LEFT = left->theRightHandSide;
-      const double *RIEMANN = riemann;
-      const double *FUNCTION_LEFT  = pg->fctleft;
-      for(j=0;j<cSize;++j)
-	for(k=0;k<lSize;++k)
-	  (*(RHS_LEFT++)) += RIEMANN[j]*FUNCTION_LEFT[k]*pg->JacTimesWeight;
-      
-      if (right)
-	{
-	  double  *RHS_RIGHT = right->theRightHandSide;
-	  const double *FUNCTION_RIGHT  = pg->fctrght;  
-	  for(j=0;j<cSize;++j)
-	    for(k=0;k<rSize;++k)
-	      (*(RHS_RIGHT++)) -= RIEMANN[j]*FUNCTION_RIGHT[k]*pg->JacTimesWeight;
-	}
+        pg= pt(i);      
+        left ->interpolate(pg->fctleft, valleft);
+        if(right) right->interpolate(pg->fctrght, valrght);
+
+        //Periodic boundary conditions
+        if (theBoundaryEntity->getClassification()->getId()==610 || theBoundaryEntity->getClassification()->getId()==510)
+        {
+            mEntity* ent=theBoundaryEntity->getAttachedEntity(TYPE_CELL);
+            DGBoundaryCell *symm = (DGBoundaryCell *)ent->getCell();
+            DGCell* another = symm->left; 
+            another->interpolate(pg->fctrght, valrght);
+        }
+
+        mPoint p(pg->x,pg->y,pg->z);
+        if(right)      //inner cell
+            left->theConservationLaw->riemannSolver(pg->n,p,valleft,valrght,riemann);
+        // or boundary conditions
+        else
+        if(theBoundaryEntity->getClassification()->getId()==20000) 
+            left->theConservationLaw->boundary (pg->n,pg->N,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
+        else if (theBoundaryEntity->getClassification()->getId()==510 || theBoundaryEntity->getClassification()->getId()==610) 
+            left->theConservationLaw->riemannSolver(pg->n,p,valleft,valrght,riemann);
+        else left->theConservationLaw->boundaryFlux (pg->n,theBoundaryEntity->getClassification()->getId(),  p, valleft,riemann,T);
+
+        // left and right contributions
+        double *RHS_LEFT = left->theRightHandSide;
+        const double *RIEMANN = riemann;
+        const double *FUNCTION_LEFT  = pg->fctleft;
+        for(j = 0; j < cSize; ++j)
+            for(k = 0; k < lSize; ++k)
+                (*(RHS_LEFT++)) += RIEMANN[j]*FUNCTION_LEFT[k]*pg->JacTimesWeight;
+        if (right)
+        {
+            double  *RHS_RIGHT = right->theRightHandSide;
+            const double *FUNCTION_RIGHT  = pg->fctrght;  
+            for(j = 0; j < cSize; ++j)
+                for(k=  0; k < rSize; ++k)
+                    (*(RHS_RIGHT++)) -= RIEMANN[j]*FUNCTION_RIGHT[k]*pg->JacTimesWeight;
+        }
     }
 }
 
@@ -1080,8 +1080,8 @@ double DGBoundaryCell::computeSphere(mPoint p[4])
 // through the boundary
 double DGBoundaryCell::computeMaxEVal()
 {
-	if ( right)return left->theConservationLaw->maximumEigenValue(n,left->theMean,right->theMean);
-	else return left->theConservationLaw->maximumEigenValue(n,left->theMean,left->theMean);
+	if ( right)return left->theConservationLaw->maximumEigenValue(n,left->details->theMean,right->details->theMean);
+	else return left->theConservationLaw->maximumEigenValue(n,left->details->theMean,left->details->theMean);
 }
 
 // Compute the Jacabian Matrix of the Flux through the boundary
@@ -1115,13 +1115,13 @@ void DGBoundaryCell::computeDeltaF(int Side, double* Up0, double* deltaUp0,doubl
 
 void DGCell::ZeroError ()
 {
-  error = 0;
+  details->error = 0;
 }
 
 void DGCell::ZeroJump ()
 {
-  jump = 0;
-  jumpError=0;
+  details->jump = 0;
+  details->jumpError=0;
 }
 
 /*********************** U T I L S *****************************/
@@ -1130,15 +1130,15 @@ void DGCell::ZeroJump ()
 void DGCell::computeMean ()
 {
   
- if(theFunctionSpace->isOrthogonal())
+ if(details->theFunctionSpace->isOrthogonal())
  {
 	 double firstBasisFunction = pt(0).fcts[0];
-	for(int j=0;j<cSize;++j)theMean[j] = theFieldsCoefficients->get(j,0)* firstBasisFunction;
+	for(int j=0;j<cSize;++j)details->theMean[j] = theFieldsCoefficients->get(j,0)* firstBasisFunction;
 	}
  else 
  {
 	 int i,j; 
-  for(i=0;i<cSize;++i)theMean[i] = 0.0;
+  for(i=0;i<cSize;++i)details->theMean[i] = 0.0;
   double vol = 0.0;
   double val[MaxNbEqn];
     for(i=0;i<nbPtGauss;++i)
@@ -1146,9 +1146,9 @@ void DGCell::computeMean ()
 		volumeGaussPoint  &pg = pt(i);
       interpolate(pg.fcts, val);
       vol += pg.JacTimesWeight;
-      for(j=0;j<cSize;++j) theMean[j] +=pg.JacTimesWeight*val[j];
+      for(j=0;j<cSize;++j) details->theMean[j] +=pg.JacTimesWeight*val[j];
     }
-  for(j=0;j<cSize;++j)theMean[j] /= vol;
+  for(j=0;j<cSize;++j)details->theMean[j] /= vol;
  }
  }
 
@@ -1157,7 +1157,7 @@ void DGCell::adaptTimeStep (double CFLMAX, double &DT)
   // CFL = a DT / DX
   // CFL < CFLMAX -> DT < DX CFLMAX / a
   double a = computeMAXEV();
-  double deltat = cellSize*CFLMAX / (a * (2.*fOrder + 1.0));
+  double deltat = details->cellSize*CFLMAX / (a * (2.*details->fOrder + 1.0));
 
   if (DT > deltat)DT = deltat;
 }
@@ -1170,7 +1170,7 @@ double DGCell::computeMAXEV()
 		{
   volumeGaussPoint &pg = pt(0);
   mPoint p(pg.x,pg.y,pg.z);  
-  double a = theConservationLaw->maximumEigenValue(theMean,p);
+  double a = theConservationLaw->maximumEigenValue(details->theMean,p);
   double val[MaxNbEqn];
   double u,v,w,b;
   u=0;v=0;w=0;
@@ -1190,14 +1190,14 @@ double DGCell::computeMAXEV()
 		break;
    case mEntity::QUAD:			/*Square*/
 		{
-			mPoint p((pMax(0)+pMin(0))*0.5,(pMax(1)+pMin(1))*0.5);
-			return theConservationLaw->maxEigenValueCube(pMax(0)-pMin(0),pMax(1)-pMin(1),0.0,theMean,p);
+			mPoint p((details->pMax(0)+details->pMin(0))*0.5,(details->pMax(1)+details->pMin(1))*0.5);
+			return theConservationLaw->maxEigenValueCube(details->pMax(0)-details->pMin(0),details->pMax(1)-details->pMin(1),0.0,details->theMean,p);
 		}
 		break;
    case mEntity::TET:
 		{
-			mPoint p((pMax(0)+pMin(0))*0.5,(pMax(1)+pMin(1))*0.5,(pMax(2)+pMin(2))*0.5);
-		return theConservationLaw->maximumEigenValue(theMean,p);
+			mPoint p((details->pMax(0)+details->pMin(0))*0.5,(details->pMax(1)+details->pMin(1))*0.5,(details->pMax(2)+details->pMin(2))*0.5);
+		return theConservationLaw->maximumEigenValue(details->theMean,p);
 		}
 		break;
 	default:
@@ -1212,8 +1212,8 @@ void DGCell::computeCellSize()
     {
   case mEntity::TRI:        /*Triangle*/
       {									 
-		//Note: This is repeated for higher order. Ie: Just reduced to a linear triangle, since there isn't necessarily a
-	    //inscribed circle for a higher order triangle.  However, perhaps there is a better solution???
+		//Note: This is repeated for higher details->order. Ie: Just reduced to a linear triangle, since there isn't necessarily a
+	    //inscribed circle for a higher details->order triangle.  However, perhaps there is a better solution???
 	mPoint p1 = ((Vertex*)theMeshEntity->get(0,0))->point();
 	mPoint p2 = ((Vertex*)theMeshEntity->get(0,1))->point();
 	mPoint p3 = ((Vertex*)theMeshEntity->get(0,2))->point();
@@ -1224,7 +1224,7 @@ void DGCell::computeCellSize()
 	double b = sqrt(B*B);
 	double c = sqrt(C*C);
 	double halfP = 0.5 * (a+b+c); 
-	cellSize = sqrt(halfP*(halfP-a)*(halfP-b)*(halfP-c))/halfP*2.; //Heron's Formula modified to give half
+	details->cellSize = sqrt(halfP*(halfP-a)*(halfP-b)*(halfP-c))/halfP*2.; //Heron's Formula modified to give half
 																	//the radius of inscribed circle
       }
       break;
@@ -1233,7 +1233,7 @@ void DGCell::computeCellSize()
 	mPoint p1 = ((Vertex*)theMeshEntity->get(0,0))->point();
 	mPoint p2 = ((Vertex*)theMeshEntity->get(0,1))->point();
 	mVector a(p1,p2);
-	cellSize = a.L2norm(); 
+	details->cellSize = a.L2norm(); 
       }
 	  break;
   case mEntity::TET:        /*Tet*/
@@ -1248,16 +1248,16 @@ void DGCell::computeCellSize()
 	mVector D(p1,p4);
 	mVector E(p2,p4);
 	mVector F(p3,p4);
-	cellSize = A.L2norm();
-	if (cellSize > B.L2norm() )cellSize = B.L2norm();
-	if (cellSize > C.L2norm() )cellSize = C.L2norm();
-	if (cellSize > D.L2norm() )cellSize = D.L2norm();
-	if (cellSize > E.L2norm() )cellSize = E.L2norm();
-	if (cellSize > F.L2norm() )cellSize = F.L2norm();
+	details->cellSize = A.L2norm();
+	if (details->cellSize > B.L2norm() )details->cellSize = B.L2norm();
+	if (details->cellSize > C.L2norm() )details->cellSize = C.L2norm();
+	if (details->cellSize > D.L2norm() )details->cellSize = D.L2norm();
+	if (details->cellSize > E.L2norm() )details->cellSize = E.L2norm();
+	if (details->cellSize > F.L2norm() )details->cellSize = F.L2norm();
 	break;
       }
     default : printf("size function for this case is not coded yet\n");
-      cellSize=0.0;
+      details->cellSize=0.0;
     }
 }
 
@@ -1267,21 +1267,21 @@ void DGCell::computeVolume()
     {
   case mEntity::TRI:        /*Triangle*/
 	  if (theMeshEntity->getgeomOrder() == 1)  
-		  volume = 0.5*detJac;
-	  else  //higher order. uses quadrature.
+		  details->volume = 0.5*details->detJac;
+	  else  //higher details->order. uses quadrature.
 	  {
-		  volume=0;
+		  details->volume=0;
 		  for (int k=0;k<nbPtGauss;k++) 
 		  {
-			volume+=volumeGaussPoints[k].JacTimesWeight;
+			details->volume+=volumeGaussPoints[k].JacTimesWeight;
 		  }
 	  }
-      //volumeRatio = 1./pt(0).detJac;
+      //volumeRatio = 1./pt(0).details->detJac;
       break;
   case mEntity::QUAD:         /*Square*/  
       {
 
-	//volumeRatio = 4./volume;
+	//volumeRatio = 4./details->volume;
 	if (theMeshEntity->getgeomOrder() == 1) 
 		{
 		mPoint p1 = ((Vertex*)theMeshEntity->get(0,0))->point();
@@ -1289,14 +1289,14 @@ void DGCell::computeVolume()
 		mPoint p3 = ((Vertex*)theMeshEntity->get(0,2))->point();
 		mVector a(p1,p2);
 		mVector b(p2,p3);
-		volume = a.L2norm()*b.L2norm();
+		details->volume = a.L2norm()*b.L2norm();
 		}
-	else  //higher order. uses quadrature.
+	else  //higher details->order. uses quadrature.
 		{
-		  volume=0;
+		  details->volume=0;
 		  for (int k=0;k<nbPtGauss;k++) 
 		  {
-			volume+=volumeGaussPoints[k].JacTimesWeight;
+			details->volume+=volumeGaussPoints[k].JacTimesWeight;
 		  }
 		}
       }
@@ -1305,20 +1305,20 @@ void DGCell::computeVolume()
       {
 		  if (theMeshEntity->getgeomOrder() == 1)
 		  {
-			volume = detJac/6.;
-			// volumeRatio = 1./pt(0).detJac;
+			details->volume = details->detJac/6.;
+			// volumeRatio = 1./pt(0).details->detJac;
 		  }
 		  else
 		  {
-			volume=0;
+			details->volume=0;
 			for (int k=0;k<nbPtGauss;k++) 
 			{
-			   volume+=volumeGaussPoints[k].JacTimesWeight;
+			   details->volume+=volumeGaussPoints[k].JacTimesWeight;
 			}
 		  }
       }
       break;
-    default : printf("volume function for this case is not coded yet\n");
+    default : printf("details->volume function for this case is not coded yet\n");
     }
 }
 
@@ -1337,14 +1337,14 @@ void DGCell::computePerimeter()
 			mVector a(p1,p2);
 			mVector b(p2,p3);
 			mVector c(p3,p1);
-			perimeter = a.L2norm()+b.L2norm()+c.L2norm();
+			details->perimeter = a.L2norm()+b.L2norm()+c.L2norm();
 		}
-	else      //uses arclength integration for higher order elements
+	else      //uses arclength integration for higher details->order elements
 		{										
-			perimeter=0;									
+			details->perimeter=0;									
 			int NbSides = theMeshEntity->getNbTemplates(1);
 			for(int k=0;k<NbSides;k++)	//iterate through edges and sum up arclengths
-			  perimeter+=arclength(theMeshEntity->get(1,k), theGaussIntegrator);
+			  details->perimeter+=arclength(theMeshEntity->get(1,k), details->theGaussIntegrator);
 		}
 	  }
     break;
@@ -1360,22 +1360,22 @@ void DGCell::computePerimeter()
 		mVector b(p2,p3);
 		mVector c(p3,p4);
 		mVector d(p4,p1);
-		perimeter = a.L2norm()+b.L2norm()+c.L2norm()+d.L2norm();
+		details->perimeter = a.L2norm()+b.L2norm()+c.L2norm()+d.L2norm();
 		}
-	else      //uses arclength integration for higher order elements
+	else      //uses arclength integration for higher details->order elements
 		{										
-			perimeter=0;									
+			details->perimeter=0;									
 			int NbSides = theMeshEntity->getNbTemplates(1);
 			for(int k=0;k<NbSides;k++)	//iterate through edges and sum up arclengths
-			  perimeter+=arclength(theMeshEntity->get(1,k), theGaussIntegrator);
+			  details->perimeter+=arclength(theMeshEntity->get(1,k), details->theGaussIntegrator);
 		}
 	  }
       break;
-    default : //printf("perimeter function for this case is not coded yet\n");
-		perimeter=0.0;
+    default : //printf("details->perimeter function for this case is not coded yet\n");
+		details->perimeter=0.0;
     }
 }
-//Finds the arclength of an nth-order edge by use of quadrature.
+//Finds the arclength of an nth-details->order edge by use of quadrature.
 double DGCell::arclength(mEntity* theEdge, GaussIntegrator* theGaussIntegrator) const
 {
 	double arclength=0;		
@@ -1387,14 +1387,14 @@ double DGCell::arclength(mEntity* theEdge, GaussIntegrator* theGaussIntegrator) 
 	mVector grads;                //holds the gradients of geometrical shape functions
 	MeshMapping m(theEdge);       //a mapping for the edge is set up.
 
-	int nbPt = theGaussIntegrator->nbIntegrationPoints(theEdge,order);
+	int nbPt = details->theGaussIntegrator->nbIntegrationPoints(theEdge,details->order);
 
 	for(int i=0;i<nbPt;i++)         //iterates through the integration points and
 	{								//adds to the quadrature sum which represents arclength.
 		dxdu=0;
 		dydu=0;
 		dzdu=0;
-		theGaussIntegrator->iPoint(theEdge,i,order,u,v,w,weight);
+		details->theGaussIntegrator->iPoint(theEdge,i,details->order,u,v,w,weight);
 		for(int j=0;j<((theEdge->getgeomOrder())+1);j++)
 		{
 			m.GradGeomShapeFunction(j,u,v,w,grads);
@@ -1445,9 +1445,9 @@ void DGCell::L2Proj (double* dU)
 	  theRightHandSide[k+fSize*j] += val[j] * pg.fcts[k] * pg.JacTimesWeight;
     }
 
-  if (theFunctionSpace->isOrthogonal())
+  if (details->theFunctionSpace->isOrthogonal())
     {
-	 double inv_Jac = 1./detJac;
+	 double inv_Jac = 1./details->detJac;
 	 double* coeff = theFieldsCoefficients->get();
       for(i=0;i<dof;++i) coeff[i] = theRightHandSide[i]*inv_Jac;
     }
@@ -1459,9 +1459,9 @@ void DGCell::L2ProjInitial (FieldEvaluator *f)
 {
   int i;
   L2Proj(f,theRightHandSide);		 
-  if (theFunctionSpace->isOrthogonal())
+  if (details->theFunctionSpace->isOrthogonal())
     {
-	 double inv_Jac = 1./detJac;
+	 double inv_Jac = 1./details->detJac;
 	 int dof = cSize*fSize;
 	 double* coeff = theFieldsCoefficients->get();
       for(i=0;i<dof;++i)
@@ -1475,7 +1475,7 @@ void DGCell::L2ProjInitial (FieldEvaluator *f)
 	  {
 	    double dxi = 0.0;
 		for(int j = 0;j<fSize;++j)
-	      dxi += theInvertMassMatrix[i][j] * theRightHandSide[j+fSize*k];
+	      dxi += details->theInvertMassMatrix[i][j] * theRightHandSide[j+fSize*k];
 	    
 		theFieldsCoefficients->get(k,i) = dxi;
 	  }
@@ -1488,33 +1488,33 @@ void DGCell::L2ProjInitial (FieldEvaluator *f)
 void DGCell::getBox(double &XminBox,double &YminBox,double &ZminBox, 
 		    double &XMaxBox,double &YMaxBox,double &ZMaxBox)
 {
-  XminBox = pMin(0);
-  YminBox = pMin(1);
-  ZminBox = pMin(2);
-  XMaxBox = pMax(0);
-  YMaxBox = pMax(1);
-  ZMaxBox = pMax(2);
+  XminBox = details->pMin(0);
+  YminBox = details->pMin(1);
+  ZminBox = details->pMin(2);
+  XMaxBox = details->pMax(0);
+  YMaxBox = details->pMax(1);
+  ZMaxBox = details->pMax(2);
 }
 
 bool DGCell::inCell (const mPoint &p, double *val)
 {
   /*
-  printf("%f %f %f %f %f %f %f %f %f\n",p(0),p(1),p(2),pMin(0),pMin(1),pMin(2),
-	 pMax(0),pMax(1),pMax(2));
+  printf("%f %f %f %f %f %f %f %f %f\n",p(0),p(1),p(2),details->pMin(0),details->pMin(1),details->pMin(2),
+	 details->pMax(0),details->pMax(1),details->pMax(2));
   */
-  if(p(0) > pMax(0) ||
-     p(1) > pMax(1) ||
-     p(2) > pMax(2) ||
-     p(0) < pMin(0) ||
-     p(1) < pMin(1) ||
-     p(2) < pMin(2))return false;
+  if(p(0) > details->pMax(0) ||
+     p(1) > details->pMax(1) ||
+     p(2) > details->pMax(2) ||
+     p(0) < details->pMin(0) ||
+     p(1) < details->pMin(1) ||
+     p(2) < details->pMin(2))return false;
 
   //  printf("in box...\n");
   
   double u,v,w;
-  theMapping->invert(p(0),p(1),p(2),u,v,w);
+  details->theMapping->invert(p(0),p(1),p(2),u,v,w);
   //  printf("%f %f %f\n",u,v,w);
-  if(!theMapping->inReferenceElement(u,v,w))return false;
+  if(!details->theMapping->inReferenceElement(u,v,w))return false;
   //  printf("ok\n");
   interpolate(u,v,w,val);
   return true;
@@ -1522,7 +1522,7 @@ bool DGCell::inCell (const mPoint &p, double *val)
 
 void DGCell::write(ostream &o)
 {
-  o << theFunctionSpace->order() << " ";
+  o << details->theFunctionSpace->order() << " ";
   o.precision(16);
   for(int i=0;i<cSize;++i)
     for(int j=0;j<fSize;++j)
@@ -1542,24 +1542,24 @@ void DGCell::read(istream &is)
 void DGCell::adaptOrder(int newOrder)
 {
   int i,j;
-  delete theFunctionSpace;
+  delete details->theFunctionSpace;
   switch(theMeshEntity->getType())
     {
     case mEntity::TRI  :
-		if (theMeshEntity->getgeomOrder() == 1) theFunctionSpace = new OrthogonalTriangleFunctionSpace(newOrder);
-		else                                    theFunctionSpace = new TriangleFunctionSpace(newOrder);
+		if (theMeshEntity->getgeomOrder() == 1) details->theFunctionSpace = new OrthogonalTriangleFunctionSpace(newOrder);
+		else                                    details->theFunctionSpace = new TriangleFunctionSpace(newOrder);
 		break;
-    case mEntity::QUAD : theFunctionSpace = new QuadFunctionSpace(newOrder); break;
+    case mEntity::QUAD : details->theFunctionSpace = new QuadFunctionSpace(newOrder); break;
     case mEntity::TET  :
-		if (theMeshEntity->getgeomOrder() == 1) theFunctionSpace = new OrthogonalTetFunctionSpace(newOrder);
-		else                                    theFunctionSpace = new TetFunctionSpace(newOrder);
+		if (theMeshEntity->getgeomOrder() == 1) details->theFunctionSpace = new OrthogonalTetFunctionSpace(newOrder);
+		else                                    details->theFunctionSpace = new TetFunctionSpace(newOrder);
 		break;
-    case mEntity::HEX  : theFunctionSpace = new HexFunctionSpace(newOrder); break;
+    case mEntity::HEX  : details->theFunctionSpace = new HexFunctionSpace(newOrder); break;
     }
   int oldFSize = fSize;
-  fSize                 = theFunctionSpace->size();
-  fOrder                = theFunctionSpace->order();
-  order = 2 * fOrder + theMapping->detJacOrder();
+  fSize                 = details->theFunctionSpace->size();
+  details->fOrder       = details->theFunctionSpace->order();
+  details->order = 2 * details->fOrder + details->theMapping->detJacOrder();
 
   DG_Dofs *oldFieldsCoefficients;
   oldFieldsCoefficients = new DG_Dofs(2,cSize,oldFSize);

@@ -33,7 +33,7 @@ void DGSuperBee::limit(DGCell *vcell, double time)
   int n = vcell->theMeshEntity->getLevel();
   int kk = 0;
   int fSize = vcell->fSize;
-  int fOrder = vcell->theFunctionSpace->order();
+  int fOrder = vcell->details->theFunctionSpace->order();
   
   double a = 1./3.464101615137754;
   double I[2][2],II[2][2],III[2][2];
@@ -58,16 +58,16 @@ void DGSuperBee::limit(DGCell *vcell, double time)
 	  if(!kk)
 	    for(int j=0;j<other->cSize;j++)
 	      {
-		Max[j] = Min[j] = other->theMean[j];
-		mean[1][j] = other->theMean[j]; 
+		Max[j] = Min[j] = other->details->theMean[j];
+		mean[1][j] = other->details->theMean[j]; 
 	      }
 	  else
 	    {
 	      for(int j=0;j<other->cSize;j++)
 		{
-		  Max[j]  = (other->theMean[j] > Max[j])?other->theMean[j]:Max[j];
-		  Min[j]  = (other->theMean[j] < Min[j])?other->theMean[j]:Min[j];
-		  mean[kk+1][j] = other->theMean[j]; 
+		  Max[j]  = (other->details->theMean[j] > Max[j])?other->details->theMean[j]:Max[j];
+		  Min[j]  = (other->details->theMean[j] < Min[j])?other->details->theMean[j]:Min[j];
+		  mean[kk+1][j] = other->details->theMean[j]; 
 		}
 	      // if ( Min[0]<0 || Min[3] <0 ) printf("NEGATIVE MEAN  \n");
 	    }
@@ -86,8 +86,8 @@ void DGSuperBee::limit(DGCell *vcell, double time)
       DGCell *left = (DGCell*)cell->mleft->getCell();
       if(cell->mright)right = (DGCell*)cell->mright->getCell();
       
-      // printf(" left %e \n",left->theMean[0]);
-      //if(cell->mright) printf(" right %e \n",right->theMean[0]);
+      // printf(" left %e \n",left->details->theMean[0]);
+      //if(cell->mright) printf(" right %e \n",right->details->theMean[0]);
       int order = cell->computeOrder();
       order =1;
       GaussIntegrator gauss;
@@ -97,7 +97,7 @@ void DGSuperBee::limit(DGCell *vcell, double time)
 	{
 	    gauss.iPoint(cell->theBoundaryEntity,i,order,u,v,w,weight);
 	    cell->theMapping->eval(u,v,w,x,y,z);
-	    vcell->theMapping->invert(x,y,z,uvol,vvol,wvol);
+	    vcell->details->theMapping->invert(x,y,z,uvol,vvol,wvol);
 	    vcell->interpolate(uvol,vvol,wvol,val);
 	    //  printf("u,v,w %f % f %f\n", u,v,w);
 	    // printf("x,y,z %f % f %f\n",x,y,z );
@@ -106,19 +106,19 @@ void DGSuperBee::limit(DGCell *vcell, double time)
 	    
 	    for(int j=0;j<vcell->cSize;j++)
 	      {
-		if(fabs(val[j] - vcell->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->theMean[j]) && fabs( vcell->theMean[j]) > 1.e-13 )	    
+		if(fabs(val[j] - vcell->details->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->details->theMean[j]) && fabs( vcell->details->theMean[j]) > 1.e-13 )	    
 		  {
 		    
-		    //    printf("MAX %f  MIn %f Mean %f val %f \n",Max[j], Min[j], vcell->theMean[j], val[j]);
+		    //    printf("MAX %f  MIn %f Mean %f val %f \n",Max[j], Min[j], vcell->details->theMean[j], val[j]);
 		    
 		    if(val[j] > Max[j] || val[j] < Min[j] )
 		      {
-			if (Max[j] > vcell->theMean[j] && Min[j] > vcell->theMean[j])
+			if (Max[j] > vcell->details->theMean[j] && Min[j] > vcell->details->theMean[j])
 			  { 
 			    for (int k=1;k<fSize;k++)
 			      vcell->theFieldsCoefficients->get(j,k) = 0.0; return;
 			  }
-			if (Max[j]<vcell->theMean[j] && Min[j]<vcell->theMean[j]) 
+			if (Max[j]<vcell->details->theMean[j] && Min[j]<vcell->details->theMean[j]) 
 			  {
 			    for (int k=1;k<fSize;k++)
 			      vcell->theFieldsCoefficients->get(j,k) = 0.0; return;
@@ -126,17 +126,17 @@ void DGSuperBee::limit(DGCell *vcell, double time)
 			
 			double b[2];
 			double diff[4];
-			diff[1] = fabs(mean[1][j]- vcell->theMean[j]);
-			diff[2] = fabs(mean[2][j]- vcell->theMean[j]);
-			diff[3] = fabs(mean[3][j]- vcell->theMean[j]);
+			diff[1] = fabs(mean[1][j]- vcell->details->theMean[j]);
+			diff[2] = fabs(mean[2][j]- vcell->details->theMean[j]);
+			diff[3] = fabs(mean[3][j]- vcell->details->theMean[j]);
 			double pos =0.0;
 			double neg = 0.0;
 			if (diff[1]>0.0) pos += diff[1];else neg += -diff[1];
 			if (diff[2]>0.0) pos += diff[2];else neg += -diff[2];
 			if (diff[3]>0.0) pos += diff[3];else neg += -diff[3];
-	    		//printf(" means %e %e %e %e\n",mean[1][j],mean[2][j],mean[3][j],vcell->theMean[j]);
+	    		//printf(" means %e %e %e %e\n",mean[1][j],mean[2][j],mean[3][j],vcell->details->theMean[j]);
 			//printf("uvol,vvol,wvol %f % f %f\n", uvol,vvol,wvol); 
-			//printf("theMean= %e val=%e\n",vcell->theMean[j],val[j]);
+			//printf("details->theMean= %e val=%e\n",vcell->details->theMean[j],val[j]);
 			//printf("Original coeff %e %e %e \n",vcell->theFieldsCoefficients[0][0],vcell->theFieldsCoefficients[0][1],vcell->theFieldsCoefficients[0][2]);
 			double phiplus, phiminus;
 			phiplus = (neg>pos) ? 1.0 : neg/pos; 
@@ -184,20 +184,20 @@ void DGSuperBee::limit(DGCell *vcell, double time)
 void DGBarthLimiter::limit(DGCell *vcell, double time)
 {
   int fSize = vcell->fSize;
-  int fOrder = vcell->theFunctionSpace->order();
+  int fOrder = vcell->details->theFunctionSpace->order();
   int cSize = vcell->cSize;
   int n = vcell->theMeshEntity->getLevel();
-  vcell->limit=1;
+  vcell->details->limit=1;
   int i,kk=0;
   double phin,val[MaxNbEqn], Max[MaxNbEqn],Min[MaxNbEqn];
 //  double u,v,w,uvol,vvol,wvol,x,y,z,weight;
   
   list<mEntity*>::const_iterator it,allSubs_end;
-  double dx = vcell->cellSize;
-  if (fabs(vcell->fullJump/(pow(dx,2*(fOrder+1))*vcell->getPerimeter()))>3. )
-    vcell->limit = 1;
+  double dx = vcell->details->cellSize;
+  if (fabs(vcell->details->fullJump/(pow(dx,2*(fOrder+1))*vcell->getPerimeter()))>3. )
+    vcell->details->limit = 1;
  
-  if (vcell->limit) {     
+  if (vcell->details->limit) {     
     int nbFaces = vcell->theMeshEntity->size(n-1);
     for(i=0;i<nbFaces;i++) {
       mEntity *bound = vcell->theMeshEntity->get(n-1,i);
@@ -210,24 +210,24 @@ void DGBarthLimiter::limit(DGCell *vcell, double time)
 	    other = (DGCell*)bound->get(n,1)->getCell();
 	  if(!kk)
 	    for(int j=0;j<cSize;j++)
-	      Max[j] = Min[j] = other->theMean[j];
+	      Max[j] = Min[j] = other->details->theMean[j];
 	  else
 	    {
 	      for(int j=0;j<cSize;j++)
 		{
-		  Max[j]  = (other->theMean[j] > Max[j])?other->theMean[j]:Max[j];
-		  Min[j]  = (other->theMean[j] < Min[j])?other->theMean[j]:Min[j];
+		  Max[j]  = (other->details->theMean[j] > Max[j])?other->details->theMean[j]:Max[j];
+		  Min[j]  = (other->details->theMean[j] < Min[j])?other->details->theMean[j]:Min[j];
 		}
 	    }
 	  kk++;
 	}
     }    
     
-    for(int j=0;j<vcell->cSize;j++) vcell->limSlope[j] = 1.0;
+    for(int j=0;j<vcell->cSize;j++) vcell->details->limSlope[j] = 1.0;
     
-    allSubs_end=vcell->allSubs.end();
+    allSubs_end=vcell->details->allSubs.end();
     boundaryGaussPoint *pg;
-    for(it = vcell->allSubs.begin();it!=allSubs_end;++it) {
+    for(it = vcell->details->allSubs.begin();it!=allSubs_end;++it) {
       DGBoundaryCell *cell = (DGBoundaryCell*)(*it)->getCell();      
       DGCell *right = 0;
       DGCell *left = (DGCell*)cell->mleft->getCell();
@@ -241,44 +241,44 @@ void DGBarthLimiter::limit(DGCell *vcell, double time)
 	  vcell->interpolate(pg->fctleft, val);
 	  for(int j=0;j<cSize;j++)
 	    {
-	      //if(fabs(val[j] - vcell->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->theMean[j]) &&fabs( vcell->theMean[j]) > 1.e-13 )
+	      //if(fabs(val[j] - vcell->details->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->details->theMean[j]) &&fabs( vcell->details->theMean[j]) > 1.e-13 )
 	      //if(pg->x>0.5 )
 		  if(true)
  {
 		
 		if(val[j] > Max[j]) {
-		  phin=(Max[j]-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		  vcell->limit=2;
+		  phin=(Max[j]-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		  vcell->details->limit=2;
 		}
 		else if(val[j] < Min[j]) {
-		  phin=(Min[j]-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		  vcell->limit=2;
+		  phin=(Min[j]-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		  vcell->details->limit=2;
 		}
-		else {phin = 1.0;vcell->limit=3;}
+		else {phin = 1.0;vcell->details->limit=3;}
 	      }
-	      else {phin = 1.0; vcell->limit = 4;
+	      else {phin = 1.0; vcell->details->limit = 4;
 	      }
-	      if(phin<0.0) {phin = 0.0;vcell->limit=5;}
-	      vcell->limSlope[j] = (vcell->limSlope[j]<phin) ? 
-		vcell->limSlope[j]:phin;
+	      if(phin<0.0) {phin = 0.0;vcell->details->limit=5;}
+	      vcell->details->limSlope[j] = (vcell->details->limSlope[j]<phin) ? 
+		vcell->details->limSlope[j]:phin;
 	    }
 	}
     }
-    //printf("alha 0 %e \n",vcell->limSlope[0]);
+    //printf("alha 0 %e \n",vcell->details->limSlope[0]);
     while(1)
       { 
-	int fSize1 = vcell->theFunctionSpace->size(1);
-	int fSizei = vcell->theFunctionSpace->size(fOrder);
-	int fSizej = vcell->theFunctionSpace->size(fOrder-1);
+	int fSize1 = vcell->details->theFunctionSpace->size(1);
+	int fSizei = vcell->details->theFunctionSpace->size(fOrder);
+	int fSizej = vcell->details->theFunctionSpace->size(fOrder-1);
 	
 	for(int j=0;j<cSize;j++)
 	  {	
 	    if(fOrder == 1)
 	      for (int k=1;k<fSize1;k++)
-		vcell->theFieldsCoefficients->get(j,k) *= vcell->limSlope[j];
+		vcell->theFieldsCoefficients->get(j,k) *= vcell->details->limSlope[j];
 	    else	
 	      for (int k=fSizej;k<fSizei;k++)
-		if(vcell->limSlope[j] < 0.9)vcell->theFieldsCoefficients->get(j,k)= 0.0;
+		if(vcell->details->limSlope[j] < 0.9)vcell->theFieldsCoefficients->get(j,k)= 0.0;
 	  }	 
 	if(fOrder == 1) break;
 	fOrder --;
@@ -293,21 +293,21 @@ void DGBarthLimiter::limit(DGCell *vcell, double time)
 void DGBarthLimiter::limit(DGCell *vcell, double time)
 {
   int fSize = vcell->fSize;
-  int fOrder = vcell->theFunctionSpace->order();
+  int details->fOrder = vcell->details->theFunctionSpace->order();
   int n = vcell->theMeshEntity->getLevel();
-  vcell->limit=1;
+  vcell->details->limit=1;
   int i,k, kk=0;
   double u,v,w,weight,val[MaxNbEqn], Max[MaxNbEqn],Min[MaxNbEqn];
   double uvol,vvol,wvol,x,y,z,phin;
   
-  list<mEntity *> allSubs;
+  list<mEntity *> details->allSubs;
   list<mEntity*>::const_iterator it,allSubs_end;
   double dx = vcell->getMaxH();
-  if (fabs(vcell->fullJump/(pow(dx,2*(fOrder+1))*vcell->getPerimeter()))>1. )
-    vcell->limit = 1;
+  if (fabs(vcell->fullJump/(pow(dx,2*(details->fOrder+1))*vcell->getPerimeter()))>1. )
+    vcell->details->limit = 1;
   //printf("Jump %f, JUmp^3 %f, maxVal %f, dx %f\n",vcell->fullJump,pow(vcell->fullJump,3),vcell->maxVal,dx);
   
-  if (vcell->limit)    
+  if (vcell->details->limit)    
     {  
       int Size = vcell->theMeshEntity->size(n-1);
       for(i=0;i<Size;i++)
@@ -322,13 +322,13 @@ void DGBarthLimiter::limit(DGCell *vcell, double time)
 		other = (DGCell*)bound->get(n,1)->getCell();
 	      if(!kk)
 		for(int j=0;j<other->cSize;j++)
-		  Max[j] = Min[j] = other->theMean[j];
+		  Max[j] = Min[j] = other->details->theMean[j];
 	      else
 		{
 		  for(int j=0;j<other->cSize;j++)
 		    {
-		      Max[j]  = (other->theMean[j] > Max[j])?other->theMean[j]:Max[j];
-		      Min[j]  = (other->theMean[j] < Min[j])?other->theMean[j]:Min[j];
+		      Max[j]  = (other->details->theMean[j] > Max[j])?other->details->theMean[j]:Max[j];
+		      Min[j]  = (other->details->theMean[j] < Min[j])?other->details->theMean[j]:Min[j];
 		    }
 		}
 	      kk++;
@@ -336,12 +336,12 @@ void DGBarthLimiter::limit(DGCell *vcell, double time)
 	}    
       
       for(k=0;k<vcell->theMeshEntity->size(n-1);k++)
-	recurGetAllsubs(vcell->theMeshEntity->get(n-1,k),allSubs);
+	recurGetAllsubs(vcell->theMeshEntity->get(n-1,k),details->allSubs);
       
-      for(int j=0;j<vcell->cSize;j++) vcell->limSlope[j] = 1.0;
-      allSubs_end=allSubs.end();
+      for(int j=0;j<vcell->cSize;j++) vcell->details->limSlope[j] = 1.0;
+      allSubs_end=details->allSubs.end();
       
-      for(it = allSubs.begin();it!=allSubs_end;++it)
+      for(it = details->allSubs.begin();it!=allSubs_end;++it)
 	{if ((*it)->getClassification()->getId()!=20000) {
 	DGBoundaryCell *cell = (DGBoundaryCell*)(*it)->getCell();      
 	int order =1;
@@ -350,55 +350,55 @@ void DGBarthLimiter::limit(DGCell *vcell, double time)
 	for(int i=0;i<Nb;i++)
 	    {
 	      gauss.iPoint(cell->theBoundaryEntity,i,order,u,v,w,weight);
-	      cell->theMapping->eval(u,v,w,x,y,z);
-	      vcell->theMapping->invert(x,y,z,uvol,vvol,wvol);
+	      cell->details->theMapping->eval(u,v,w,x,y,z);
+	      vcell->details->theMapping->invert(x,y,z,uvol,vvol,wvol);
 	      if (x>0.5) {
 		vcell->interpolate(uvol,vvol,wvol,val);
 		for(int j=0;j<vcell->cSize;j++) {
-		  //		  if(fabs(val[j] - vcell->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->theMean[j]) &&fabs( vcell->theMean[j]) > 1.e-13 )
+		  //		  if(fabs(val[j] - vcell->details->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->details->theMean[j]) &&fabs( vcell->details->theMean[j]) > 1.e-13 )
 		  if(true)
 		    {
 		      if(val[j] > Max[j])
 			{
 			  //printf("j=%d x=%e y=%e val=%e max=%e\n",j,x,y,val[j],Max[j]);
-			  phin=(Max[j]-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-			  vcell->limit=2;
+			  phin=(Max[j]-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+			  vcell->details->limit=2;
 			}
 		      else if(val[j] < Min[j])
 			{
 			  //printf("j=%d x=%e y=%e val=%e min = %e\n",j,x,y,val[j],Min[j]);
-			  phin=(Min[j]-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-			  vcell->limit=2;
+			  phin=(Min[j]-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+			  vcell->details->limit=2;
 			}
-		      else {phin = 1.0;vcell->limit=3;}
+		      else {phin = 1.0;vcell->details->limit=3;}
 		    }
 		  else phin = 1.0;
-		  if(phin<0.0) {phin = 0.0;vcell->limit=5;}
-		  vcell->limSlope[j] = (vcell->limSlope[j]<phin) ? 
-		    vcell->limSlope[j]:phin;
+		  if(phin<0.0) {phin = 0.0;vcell->details->limit=5;}
+		  vcell->details->limSlope[j] = (vcell->details->limSlope[j]<phin) ? 
+		    vcell->details->limSlope[j]:phin;
 		}
 	      }
 	    }
 	}
 	}
-      //printf("alha 0 %e \n",vcell->limSlope[0]);
+      //printf("alha 0 %e \n",vcell->details->limSlope[0]);
       while(1)
 	{ 
-	  int fSize1 = vcell->theFunctionSpace->size(1);
-	  int fSizei = vcell->theFunctionSpace->size(fOrder);
-	  int fSizej = vcell->theFunctionSpace->size(fOrder-1);
+	  int fSize1 = vcell->details->theFunctionSpace->size(1);
+	  int fSizei = vcell->details->theFunctionSpace->size(details->fOrder);
+	  int fSizej = vcell->details->theFunctionSpace->size(details->fOrder-1);
 	  
 	  for(int j=0;j<vcell->cSize;j++)
 	    {	
-	      if(fOrder == 1)
+	      if(details->fOrder == 1)
 		for (int k=1;k<fSize1;k++)
-		  vcell->theFieldsCoefficients->get(j,k) *= vcell->limSlope[j];
+		  vcell->theFieldsCoefficients->get(j,k) *= vcell->details->limSlope[j];
 	      else	
 		for (int k=fSizej;k<fSizei;k++)
-		  if(vcell->limSlope[j] < 0.9)vcell->theFieldsCoefficients->get(j,k)= 0.0;
+		  if(vcell->details->limSlope[j] < 0.9)vcell->theFieldsCoefficients->get(j,k)= 0.0;
 	    }	 
-	  if(fOrder == 1) break;
-	  fOrder --;
+	  if(details->fOrder == 1) break;
+	  details->fOrder --;
 	}
     }  
 }
@@ -409,10 +409,10 @@ void DGBarthLimiter::limit(DGCell *vcell, double time)
 void DGBarthLimiterEuler::limit(DGCell *vcell, double time)
 {
   int fSize = vcell->fSize;
-  int fOrder = vcell->fOrder;
+  int fOrder = vcell->details->fOrder;
   int cSize  = vcell->cSize;
   int n = vcell->theMeshEntity->getLevel();
-  vcell->limit=5;
+  vcell->details->limit=5;
   int j,k,kk=0;
   double rhom,rhoM,um,uM,vm,vM,pm,pM;
 //  double bExtrema[MaxNbEqn],Max[MaxNbEqn],Min[MaxNbEqn];
@@ -421,7 +421,7 @@ void DGBarthLimiterEuler::limit(DGCell *vcell, double time)
   double const GAMMA_1=0.4;
 list<mEntity *> allSubs;
   list<mEntity*>::const_iterator it;
-    if (vcell->limit)    
+    if (vcell->details->limit)    
     {  
       
       for(int i=0;i<vcell->theMeshEntity->size(n-1);i++)
@@ -436,18 +436,18 @@ list<mEntity *> allSubs;
 		other = (DGCell*)bound->get(n,1)->getCell();
 	      if(!kk)
 		{
-		  rhoM = rhom = other->theMean[0];
-		  uM   = um   = other->theMean[1]/rhoM;
-		  vM   = vm   = other->theMean[2]/rhoM;
-		  pM   = pm   = (GAMMA_1)*(other->theMean[3] - (uM*uM + vM*vM) *0.5*rhoM);
+		  rhoM = rhom = other->details->theMean[0];
+		  uM   = um   = other->details->theMean[1]/rhoM;
+		  vM   = vm   = other->details->theMean[2]/rhoM;
+		  pM   = pm   = (GAMMA_1)*(other->details->theMean[3] - (uM*uM + vM*vM) *0.5*rhoM);
 		}
 	      else
 		{
-		  double rhoO = other->theMean[0]; 
-		  double invrhoO = 1./other->theMean[0];
-		  double uO =other->theMean[1]*invrhoO;  
-		  double vO =other->theMean[2]*invrhoO;
-		  double pO   = (GAMMA_1)*(other->theMean[3] - (uO*uO + vO*vO) *0.5*rhoO);
+		  double rhoO = other->details->theMean[0]; 
+		  double invrhoO = 1./other->details->theMean[0];
+		  double uO =other->details->theMean[1]*invrhoO;  
+		  double vO =other->details->theMean[2]*invrhoO;
+		  double pO   = (GAMMA_1)*(other->details->theMean[3] - (uO*uO + vO*vO) *0.5*rhoO);
 		  
 		  rhoM = ( rhoO > rhoM ) ? rhoO : rhoM ; 
 		  rhom = ( rhoO < rhom ) ? rhoO : rhom ; 
@@ -462,12 +462,12 @@ list<mEntity *> allSubs;
 	    }
 	}
        
-      for(j=0;j<cSize;j++)  vcell->limSlope[j]= alfa[j] =1.0;
+      for(j=0;j<cSize;j++)  vcell->details->limSlope[j]= alfa[j] =1.0;
       
       for(k=0;k<vcell->theMeshEntity->size(n-1);k++)
 	recurGetAllsubs(vcell->theMeshEntity->get(n-1,k),allSubs);      
      
-      for(it = vcell->allSubs.begin();it!=vcell->allSubs.end();++it)
+      for(it = vcell->details->allSubs.begin();it!=vcell->details->allSubs.end();++it)
 	{
 	  DGBoundaryCell *cell = (DGBoundaryCell*)(*it)->getCell();      
 	  
@@ -478,65 +478,65 @@ list<mEntity *> allSubs;
 	      else vcell->interpolate(pg->fctrght,val);
 	      double u,v,p;
 	      u = val[1]/val[0]; v=val[2]/val[0]; p = GAMMA_1*(val[3]-0.5*(u*u +v*v)*val[0]);
-	      //if(fabs(val[j] - vcell->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->theMean[j]) &&fabs( vcell->theMean[j]) > 1.e-13 )     
+	      //if(fabs(val[j] - vcell->details->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->details->theMean[j]) &&fabs( vcell->details->theMean[j]) > 1.e-13 )     
 		{
-		  if(val[0]>rhoM) alfa[0]=(rhoM-vcell->theMean[0])/(val[0]-vcell->theMean[0]);
-		  if(val[0] < rhom) alfa[0] = (rhom-vcell->theMean[0])/(val[0]-vcell->theMean[0]);
+		  if(val[0]>rhoM) alfa[0]=(rhoM-vcell->details->theMean[0])/(val[0]-vcell->details->theMean[0]);
+		  if(val[0] < rhom) alfa[0] = (rhom-vcell->details->theMean[0])/(val[0]-vcell->details->theMean[0]);
 
-		  if(u>uM) alfa[1]=(uM*val[0]-vcell->theMean[1])/(val[1]-vcell->theMean[1]);
-		  if (u<um) alfa[1]=(um*val[0]-vcell->theMean[1])/(val[1]-vcell->theMean[1]);
+		  if(u>uM) alfa[1]=(uM*val[0]-vcell->details->theMean[1])/(val[1]-vcell->details->theMean[1]);
+		  if (u<um) alfa[1]=(um*val[0]-vcell->details->theMean[1])/(val[1]-vcell->details->theMean[1]);
 		  
-		  if(v>vM) alfa[2]=(vM*val[0]-vcell->theMean[2])/(val[2]-vcell->theMean[2]);
-		  if(v<vm) alfa[2]=(vm*val[0]-vcell->theMean[2])/(val[2]-vcell->theMean[2]);	 
+		  if(v>vM) alfa[2]=(vM*val[0]-vcell->details->theMean[2])/(val[2]-vcell->details->theMean[2]);
+		  if(v<vm) alfa[2]=(vm*val[0]-vcell->details->theMean[2])/(val[2]-vcell->details->theMean[2]);	 
 
-		  if(p>pM) alfa[3]=(pM/(GAMMA-1)+0.5*(u*u+v*v)*val[0]-vcell->theMean[3])/(val[3]-vcell->theMean[3]);  
-		  if(p<pm) alfa[3]=(pm/(GAMMA-1)+0.5*(u*u+v*v)*val[0]-vcell->theMean[3])/(val[3]-vcell->theMean[3]);  
+		  if(p>pM) alfa[3]=(pM/(GAMMA-1)+0.5*(u*u+v*v)*val[0]-vcell->details->theMean[3])/(val[3]-vcell->details->theMean[3]);  
+		  if(p<pm) alfa[3]=(pm/(GAMMA-1)+0.5*(u*u+v*v)*val[0]-vcell->details->theMean[3])/(val[3]-vcell->details->theMean[3]);  
 		  /*
 		  {
-		      phin = (Max[j]-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		      if (j==0) vcell->limit=0;
-		      if (j==1) vcell->limit=1;
-		      if (j==2) vcell->limit=2;
-		      if (j==3) vcell->limit=3;
+		      phin = (Max[j]-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		      if (j==0) vcell->details->limit=0;
+		      if (j==1) vcell->details->limit=1;
+		      if (j==2) vcell->details->limit=2;
+		      if (j==3) vcell->details->limit=3;
 		      //printf("limiting %d\n",j);
 		    }
 		  else if(val[j] < Min[j])
 		    {
-		      phin = (Min[j]-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		      if (j==0) vcell->limit=0;
-		      if (j==1) vcell->limit=1;
-		      if (j==2) vcell->limit=2;
-		      if (j==3) vcell->limit=3;
-		      //vcell->limit=3;
+		      phin = (Min[j]-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		      if (j==0) vcell->details->limit=0;
+		      if (j==1) vcell->details->limit=1;
+		      if (j==2) vcell->details->limit=2;
+		      if (j==3) vcell->details->limit=3;
+		      //vcell->details->limit=3;
 		      //printf("limiting %d\n",j);
-		      //printf("val<Min val[%d]=%e Min=%e Mean=%e\n",j,val[j],Min[j],vcell->theMean[j]);
+		      //printf("val<Min val[%d]=%e Min=%e Mean=%e\n",j,val[j],Min[j],vcell->details->theMean[j]);
 		    }
 		    */
 		}
 	      for(int j=0;j<cSize;j++) 
 		{
 		  if (alfa[j]<0.0) alfa[j] = 0.0;
-		  vcell->limSlope[j] = (vcell->limSlope[j]<alfa[j])?vcell->limSlope[j]:alfa[j];
+		  vcell->details->limSlope[j] = (vcell->details->limSlope[j]<alfa[j])?vcell->details->limSlope[j]:alfa[j];
 		}
 	    }
 	}
-	 // printf("alha 0 %e \n",vcell->limSlope[0]);
-     // for(int j=0;j<cSize;j++) printf("vcell->limSlope[j] %e ",vcell->limSlope[j]);
+	 // printf("alha 0 %e \n",vcell->details->limSlope[0]);
+     // for(int j=0;j<cSize;j++) printf("vcell->details->limSlope[j] %e ",vcell->details->limSlope[j]);
 	  //printf("\n");
       while(1)
 	{ 
-	  int fSize1 = vcell->theFunctionSpace->size(1);
-	  int fSizei = vcell->theFunctionSpace->size(fOrder);
-	  int fSizej = vcell->theFunctionSpace->size(fOrder-1);
+	  int fSize1 = vcell->details->theFunctionSpace->size(1);
+	  int fSizei = vcell->details->theFunctionSpace->size(fOrder);
+	  int fSizej = vcell->details->theFunctionSpace->size(fOrder-1);
 	  
 	  for(int j=0;j<cSize;j++)
 	    {	
 	      if(fOrder == 1)
 		for (int k=1;k<fSize1;k++)
-		  vcell->theFieldsCoefficients ->get(j,k)*= vcell->limSlope[j];
+		  vcell->theFieldsCoefficients ->get(j,k)*= vcell->details->limSlope[j];
 	      else	
 		for (int k=fSizej;k<fSizei;k++)
-		  if(vcell->limSlope[j] < 0.9)vcell->theFieldsCoefficients->get(j,k)= 0.0;
+		  if(vcell->details->limSlope[j] < 0.9)vcell->theFieldsCoefficients->get(j,k)= 0.0;
 	    }	 
 	  if(fOrder == 1) break;
 	  fOrder --;
@@ -549,9 +549,9 @@ list<mEntity *> allSubs;
 void DGVertexLimiter::limit(DGCell *vcell, double time)
 {
   int fSize = vcell->fSize;
-  int fOrder = vcell->theFunctionSpace->order();
+  int fOrder = vcell->details->theFunctionSpace->order();
   int n = vcell->theMeshEntity->getLevel();
-  vcell->limit=5;
+  vcell->details->limit=5;
   int kk=0;
 //s  double u,v,w,weight,val[MaxNbEqn], Max[MaxNbEqn],Min[MaxNbEqn];
 //  double uvol,vvol,wvol,x,y,z;
@@ -559,18 +559,18 @@ void DGVertexLimiter::limit(DGCell *vcell, double time)
   list<mEntity *> allSubs;
   list<mEntity*>::const_iterator it;
   //double dx = vcell->getMaxH();
-  //  if (fabs(pow(vcell->fullJump,3)/vcell->maxVal/sqrt(pow(dx,3*(fOrder+1)))/dx)>1. )
-  //vcell->limit = 1;
+  //  if (fabs(pow(vcell->fullJump,3)/vcell->maxVal/sqrt(pow(dx,3*(details->fOrder+1)))/dx)>1. )
+  //vcell->details->limit = 1;
   //printf("Jump %f, JUmp^3 %f, maxVal %f, dx %f\n",vcell->fullJump,pow(vcell->fullJump,3),vcell->maxVal,dx);
   
-if (vcell->limit)    
+if (vcell->details->limit)    
   {  
     double Max[MaxNbEqn],Min[MaxNbEqn];
     int n = vcell->theMeshEntity->getLevel();
     int k;
     int kk = 0;
     int fSize = vcell->fSize;
-    int fOrder = vcell->theFunctionSpace->order();
+    int fOrder = vcell->details->theFunctionSpace->order();
     
     double val[MaxNbEqn];
     list<mEntity*>::const_iterator it;
@@ -595,15 +595,15 @@ if (vcell->limit)
 	if(!kk)
 	  {
 	    for(int j=0;j<cell->cSize;j++)
-	      Max[j] = Min[j] = cell->theMean[j];
+	      Max[j] = Min[j] = cell->details->theMean[j];
 	  }
 	else
 	  {
 	    for(int j=0;j<cell->cSize;j++)
 	      {
-		Max[j]  = (cell->theMean[j] > Max[j])?cell->theMean[j]:Max[j];
-		Min[j]  = (cell->theMean[j] < Min[j])?cell->theMean[j]:Min[j];
-		// printf("Min= %e Max=%e Mean =%e\n",Min[j],Max[j],cell->theMean[j]);
+		Max[j]  = (cell->details->theMean[j] > Max[j])?cell->details->theMean[j]:Max[j];
+		Min[j]  = (cell->details->theMean[j] < Min[j])?cell->details->theMean[j]:Min[j];
+		// printf("Min= %e Max=%e Mean =%e\n",Min[j],Max[j],cell->details->theMean[j]);
 		//(*it)->print();
 	      }
 	    //if ( Min[0]<0 || Min[3] <0 ) printf("NEGATIVE MEAN  \n");
@@ -613,7 +613,7 @@ if (vcell->limit)
   //printf("Min= %e Max=%e\n",Min[0],Max[0]);
   
   for(int j=0;j<vcell->cSize;j++)
-    vcell->limSlope[j] = 1.0;
+    vcell->details->limSlope[j] = 1.0;
   
   for(k=0;k<vcell->theMeshEntity->size(n-1);k++)
     recurGetAllsubs(vcell->theMeshEntity->get(n-1,k),allSubs);
@@ -635,42 +635,42 @@ if (vcell->limit)
 	    vcell->interpolate(V[i][0],V[i][1],V[i][2],val);
 	    double x;
 	    if(true)
-	      //	    if(fabs(val[j] - vcell->theMean[j]) > 1.e-8 * fabs(val[j] + vcell->theMean[j]) &&fabs( vcell->theMean[j]) > 1.e-13 )	    
+	      //	    if(fabs(val[j] - vcell->details->theMean[j]) > 1.e-8 * fabs(val[j] + vcell->details->theMean[j]) &&fabs( vcell->details->theMean[j]) > 1.e-13 )	    
 	      {
 		if(val[j] > Max[j])
 		  {
 		    x = Max[j];
-		    phin = (x-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		    vcell->limit=3;
+		    phin = (x-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		    vcell->details->limit=3;
 		  }
 		else if(val[j] < Min[j])
 		  {
 		    x = Min[j];
-		    phin = (x-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		    vcell->limit=3;
+		    phin = (x-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		    vcell->details->limit=3;
 		  }
 		else  phin = 1.0;
 	      }
 	    else       phin = 1.0;
-	    if(phin<0.0) {phin = 0.0;vcell->limit=2;}
-	    vcell->limSlope[j] = (vcell->limSlope[j]<phin)?vcell->limSlope[j]:phin;
+	    if(phin<0.0) {phin = 0.0;vcell->details->limit=2;}
+	    vcell->details->limSlope[j] = (vcell->details->limSlope[j]<phin)?vcell->details->limSlope[j]:phin;
 	  }
     }   
 
   while(1)
     { 
-      int fSize1 = vcell->theFunctionSpace->size(1);
-      int fSizei = vcell->theFunctionSpace->size(fOrder);
-      int fSizej = vcell->theFunctionSpace->size(fOrder-1);
+      int fSize1 = vcell->details->theFunctionSpace->size(1);
+      int fSizei = vcell->details->theFunctionSpace->size(fOrder);
+      int fSizej = vcell->details->theFunctionSpace->size(fOrder-1);
       
       for(int j=0;j<vcell->cSize;j++)
 	{	
 	  if(fOrder == 1)
 	    for (int k=1;k<fSize1;k++)
-	      vcell->theFieldsCoefficients ->get(j,k)*= vcell->limSlope[j];
+	      vcell->theFieldsCoefficients ->get(j,k)*= vcell->details->limSlope[j];
 	  else	
 	    for (int k=fSizej;k<fSizei;k++)
-	      if(vcell->limSlope[j] < 0.9)vcell->theFieldsCoefficients ->get(j,k)= 0.0;
+	      if(vcell->details->limSlope[j] < 0.9)vcell->theFieldsCoefficients ->get(j,k)= 0.0;
 	}	 
       if(fOrder == 1) break;
       fOrder --;
@@ -683,28 +683,28 @@ if (vcell->limit)
       for(int i=0;i<gauss.nbIntegrationPoints(order);i++)
 	{
 	  gauss.iPoint(i,order,u,v,w,weight);
-	  cell->theMapping->eval(u,v,w,x,y,z);
-	  vcell->theMapping->invert(x,y,z,uvol,vvol,wvol);
+	  cell->details->theMapping->eval(u,v,w,x,y,z);
+	  vcell->details->theMapping->invert(x,y,z,uvol,vvol,wvol);
 	  vcell->interpolate(uvol,vvol,wvol,val);
 	  // printf("u=%f v=%f, x=%f y=%f,uvol=%f vvol=%f\n",u,v,x,y,uvol,vvol);
 	  for(int j=0;j<vcell->cSize;j++)
 	    {
 	      double x;
-	      if(fabs(val[j] - vcell->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->theMean[j]) &&fabs( vcell->theMean[j]) > 1.e-13 )	    
+	      if(fabs(val[j] - vcell->details->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->details->theMean[j]) &&fabs( vcell->details->theMean[j]) > 1.e-13 )	    
 		{
 		  if(val[j] > Max[j])
 		    {
 		      x = Max[j];
-		      phin = (x-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		      vcell->limit=3;
-		      //    printf("val>Max val[%d]=%e Max=%e Mean=%e\n",j,val[j],Max[j],vcell->theMean[j]);
+		      phin = (x-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		      vcell->details->limit=3;
+		      //    printf("val>Max val[%d]=%e Max=%e Mean=%e\n",j,val[j],Max[j],vcell->details->theMean[j]);
 		    }
 		  else if(val[j] < Min[j])
 		    {
 		      x = Min[j];
-		      phin = (x-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		      vcell->limit=3;
-		      //printf("val<Min val[%d]=%e Min=%e Mean=%e\n",j,val[j],Min[j],vcell->theMean[j]);
+		      phin = (x-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		      vcell->details->limit=3;
+		      //printf("val<Min val[%d]=%e Min=%e Mean=%e\n",j,val[j],Min[j],vcell->details->theMean[j]);
 		    }
 		  else 
 		    {
@@ -713,8 +713,8 @@ if (vcell->limit)
 		}
 	      else
 		phin = 1.0;
-	      if(phin<0.0) {phin = 0.0;vcell->limit=2;}
-	      vcell->limSlope[j] = (vcell->limSlope[j]<phin)?vcell->limSlope[j]:phin;
+	      if(phin<0.0) {phin = 0.0;vcell->details->limit=2;}
+	      vcell->details->limSlope[j] = (vcell->details->limSlope[j]<phin)?vcell->details->limSlope[j]:phin;
 	      }
 	      }*/
   }
@@ -724,37 +724,37 @@ if (vcell->limit)
 void VertLimiter::limit(DGCell *vcell, double time)
 {
   const int fSize = vcell->fSize;
-  int fOrder = vcell->theFunctionSpace->order();
+  int fOrder = vcell->details->theFunctionSpace->order();
   const int cSize = vcell->cSize;
   const int n = vcell->theMeshEntity->getLevel();
-  vcell->limit=1;
+  vcell->details->limit=1;
   int  kk=0;
   //double u,v,w,weight;
   //double uvol,vvol,wvol,x,y,z,phin;
   double phin,val[MaxNbEqn], Max[MaxNbEqn],Min[MaxNbEqn];
   list<mEntity*>::const_iterator it,itt;
-  list<mEntity*>::const_iterator vertEnd=vcell->allVert.end(); 
+  list<mEntity*>::const_iterator vertEnd=vcell->details->allVert.end(); 
   //double dx = vcell->getMaxH();
-  //  if (fabs(pow(vcell->fullJump,3)/vcell->maxVal/sqrt(pow(dx,3*(fOrder+1)))/dx)>1. )
-  //vcell->limit = 1;
+  //  if (fabs(pow(vcell->fullJump,3)/vcell->maxVal/sqrt(pow(dx,3*(details->fOrder+1)))/dx)>1. )
+  //vcell->details->limit = 1;
   //printf("Jump %f, JUmp^3 %f, maxVal %f, dx %f\n",vcell->fullJump,pow(vcell->fullJump,3),vcell->maxVal,dx);
   
-  if (vcell->limit) {  
-    for(it = vcell->allVert.begin();it!=vertEnd;++it)
+  if (vcell->details->limit) {  
+    for(it = vcell->details->allVert.begin();it!=vertEnd;++it)
       {
 	DGCell *cell = (DGCell*)(*it)->getCell();
 	
 	if(!kk)
 	  {
 	    for(int j=0;j<cSize;j++)
-	      Max[j] = Min[j] = cell->theMean[j];
+	      Max[j] = Min[j] = cell->details->theMean[j];
 	  }
 	else
 	    for(int j=0;j<cSize;j++)
 	      {
-		Max[j]  = (cell->theMean[j] > Max[j])?cell->theMean[j]:Max[j];
-		Min[j]  = (cell->theMean[j] < Min[j])?cell->theMean[j]:Min[j];
-		//printf("Min= %e Max=%e Mean =%e\n",Min[j],Max[j],cell->theMean[j]);
+		Max[j]  = (cell->details->theMean[j] > Max[j])?cell->details->theMean[j]:Max[j];
+		Min[j]  = (cell->details->theMean[j] < Min[j])?cell->details->theMean[j]:Min[j];
+		//printf("Min= %e Max=%e Mean =%e\n",Min[j],Max[j],cell->details->theMean[j]);
 		//(*it)->print();
 	      }
 	//if ( Min[0]<0 || Min[3] <0 ) printf("NEGATIVE MEAN  \n");
@@ -763,10 +763,10 @@ void VertLimiter::limit(DGCell *vcell, double time)
       }
     
     for(int j=0;j<cSize;j++)
-      vcell->limSlope[j] = 1.0;
+      vcell->details->limSlope[j] = 1.0;
          boundaryGaussPoint *pg;
-    list<mEntity*>::const_iterator endE = vcell->allSubs.end();
-    for(it = vcell->allSubs.begin();it!=endE;++it)
+    list<mEntity*>::const_iterator endE = vcell->details->allSubs.end();
+    for(it = vcell->details->allSubs.begin();it!=endE;++it)
       { if ((*it)->getClassification()->getId()!=20000) {
 	DGBoundaryCell *cell = (DGBoundaryCell*)(*it)->getCell();  
 	//one-two poit switch starts here    
@@ -776,8 +776,8 @@ void VertLimiter::limit(DGCell *vcell, double time)
 	for(int i=0;i<Nb;i++)
 	  {
 	    gauss.iPoint(cell->theBoundaryEntity,i,order,u,v,w,weight);
-	    cell->theMapping->eval(u,v,w,x,y,z);
-	    vcell->theMapping->invert(x,y,z,uvol,vvol,wvol);*/
+	    cell->details->theMapping->eval(u,v,w,x,y,z);
+	    vcell->details->theMapping->invert(x,y,z,uvol,vvol,wvol);*/
 	// and ends here
 	int Nb = cell->getNbPtGauss();
 	for(int i=0;i<Nb;i++)
@@ -789,37 +789,37 @@ void VertLimiter::limit(DGCell *vcell, double time)
 	    for(int j=0;j<cSize;j++)
 	      {
 		double x;
-		//if(fabs(val[j] - vcell->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->theMean[j]) &&fabs( vcell->theMean[j]) > 1.e-13 )	
+		//if(fabs(val[j] - vcell->details->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->details->theMean[j]) &&fabs( vcell->details->theMean[j]) > 1.e-13 )	
 		if (1)//(pg->x>0.5)
 		  {
 		    if(val[j] > Max[j])
 		      {
 		      x = Max[j];
-		      phin = (x-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		      vcell->limit=2;
-		       if (j==0)  printf("val>Max val[%d]=%e Max=%e Mean=%e\n",j,val[j],Max[j],vcell->theMean[j]);
+		      phin = (x-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		      vcell->details->limit=2;
+		       if (j==0)  printf("val>Max val[%d]=%e Max=%e Mean=%e\n",j,val[j],Max[j],vcell->details->theMean[j]);
 		      }
 		  else if(val[j] < Min[j])
 		    {
 		      x = Min[j];
-		      phin = (x-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		      vcell->limit=2;
-		     if (j==0) printf("val<Min val[%d]=%e Min=%e Mean=%e\n",j,val[j],Min[j],vcell->theMean[j]);
+		      phin = (x-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		      vcell->details->limit=2;
+		     if (j==0) printf("val<Min val[%d]=%e Min=%e Mean=%e\n",j,val[j],Min[j],vcell->details->theMean[j]);
 		    }
 		    else 
 		      {
-			phin = 1.0;vcell->limit=3;
+			phin = 1.0;vcell->details->limit=3;
 		      }
 		  }
 		else
 		  phin = 1.0;
-		if(phin<0.0) {phin = 0.0;vcell->limit=5;}
-		vcell->limSlope[j] = (vcell->limSlope[j]<phin)?vcell->limSlope[j]:phin;
-		if (vcell->limSlope[j]<1.) {
-		  for(itt = vcell->allVert.begin();itt!=vertEnd;++itt){
+		if(phin<0.0) {phin = 0.0;vcell->details->limit=5;}
+		vcell->details->limSlope[j] = (vcell->details->limSlope[j]<phin)?vcell->details->limSlope[j]:phin;
+		if (vcell->details->limSlope[j]<1.) {
+		  for(itt = vcell->details->allVert.begin();itt!=vertEnd;++itt){
 		    DGCell *ccell = (DGCell*)(*itt)->getCell();
-	if (j==0)	    printf(" %e ",ccell->theMean[j]);}
-		 if (j==0) printf("val [%d] =%e MIN[j] =%e MAx[j] =%e vcell->limSlope[j]=%e \n",j,val[j],Min[j],Max[j],vcell->limSlope[j]);
+	if (j==0)	    printf(" %e ",ccell->details->theMean[j]);}
+		 if (j==0) printf("val [%d] =%e MIN[j] =%e MAx[j] =%e vcell->details->limSlope[j]=%e \n",j,val[j],Min[j],Max[j],vcell->details->limSlope[j]);
 		  if (j==0) printf(" %e %e\n",pg->x,pg->y);
 		  printf("\n");
 		  }
@@ -829,18 +829,18 @@ void VertLimiter::limit(DGCell *vcell, double time)
       }
     while(1)
       { 
-	int fSize1 = vcell->theFunctionSpace->size(1);
-	int fSizei = vcell->theFunctionSpace->size(fOrder);
-      int fSizej = vcell->theFunctionSpace->size(fOrder-1);
+	int fSize1 = vcell->details->theFunctionSpace->size(1);
+	int fSizei = vcell->details->theFunctionSpace->size(fOrder);
+      int fSizej = vcell->details->theFunctionSpace->size(fOrder-1);
       
       for(int j=0;j<cSize;j++)
 	{	
 	  if(fOrder == 1)
 	    for (int k=1;k<fSize1;k++)
-	      vcell->theFieldsCoefficients ->get(j,k)*= vcell->limSlope[j];
+	      vcell->theFieldsCoefficients ->get(j,k)*= vcell->details->limSlope[j];
 	  else	
 	    for (int k=fSizej;k<fSizei;k++)
-	      if(vcell->limSlope[j] < 0.9)vcell->theFieldsCoefficients ->get(j,k)= 0.0;
+	      if(vcell->details->limSlope[j] < 0.9)vcell->theFieldsCoefficients ->get(j,k)= 0.0;
 	}	 
       if(fOrder == 1) break;
       fOrder --;
@@ -858,7 +858,7 @@ void DGLimiter::computeMinMaxEdge(DGCell *vcell)
   int k;
   int kk = 0;
   int fSize = vcell->fSize;
-  int fOrder = vcell->theFunctionSpace->order();
+  int fOrder = vcell->details->theFunctionSpace->order();
   
   double u,v,w,weight,val[MaxNbEqn];
   double uvol,vvol,wvol,x,y,z,phin;
@@ -878,14 +878,14 @@ void DGLimiter::computeMinMaxEdge(DGCell *vcell)
 	  if(!kk)
 	    {
 	      for(int j=0;j<other->cSize;j++)
-		Max[j] = Min[j] = other->theMean[j];
+		Max[j] = Min[j] = other->details->theMean[j];
 	    }
 	  else
 	    {
 	      for(int j=0;j<other->cSize;j++)
 		{
-		  Max[j]  = (other->theMean[j] > Max[j])?other->theMean[j]:Max[j];
-		  Min[j]  = (other->theMean[j] < Min[j])?other->theMean[j]:Min[j];
+		  Max[j]  = (other->details->theMean[j] > Max[j])?other->details->theMean[j]:Max[j];
+		  Min[j]  = (other->details->theMean[j] < Min[j])?other->details->theMean[j]:Min[j];
 		  //  printf("Min= %e Max=%e\n",Min[j],Max[j]);
 		}
 	      // if ( Min[0]<0 || Min[3] <0 ) printf("NEGATIVE MEAN  \n");
@@ -909,7 +909,7 @@ void DGLimiter::computeMinMaxEdge(DGCell *vcell)
       DGCell *left = (DGCell*)cell->mleft->getCell();
       if(cell->mright)right = (DGCell*)cell->mright->getCell();  
   for(int j=0;j<vcell->cSize;j++)
-    vcell->limSlope[j] = 1.0;
+    vcell->details->limSlope[j] = 1.0;
   
   int order = cell->computeOrder();
   order=1;
@@ -919,27 +919,27 @@ void DGLimiter::computeMinMaxEdge(DGCell *vcell)
     {
       gauss.iPoint(cell->theBoundaryEntity,i,order,u,v,w,weight);
       cell->theMapping->eval(u,v,w,x,y,z);
-      vcell->theMapping->invert(x,y,z,uvol,vvol,wvol);
+      vcell->details->theMapping->invert(x,y,z,uvol,vvol,wvol);
       vcell->interpolate(uvol,vvol,wvol,val);
       // printf("u=%f v=%f, x=%f y=%f,uvol=%f vvol=%f\n",u,v,x,y,uvol,vvol);
       for(int j=0;j<vcell->cSize;j++)
 	{
 	  double x;
-	  if(fabs(val[j] - vcell->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->theMean[j]) &&fabs( vcell->theMean[j]) > 1.e-13 )	    
+	  if(fabs(val[j] - vcell->details->theMean[j]) > 1.e-5 * fabs(val[j] + vcell->details->theMean[j]) &&fabs( vcell->details->theMean[j]) > 1.e-13 )	    
 	    {
 	      if(val[j] > Max[j])
 		{
 		  x = Max[j];
-		  phin = (x-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		  vcell->limit=3;
-		  //    printf("val>Max val[%d]=%e Max=%e Mean=%e\n",j,val[j],Max[j],vcell->theMean[j]);
+		  phin = (x-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		  vcell->details->limit=3;
+		  //    printf("val>Max val[%d]=%e Max=%e Mean=%e\n",j,val[j],Max[j],vcell->details->theMean[j]);
 		}
 	      else if(val[j] < Min[j])
 		{
 		  x = Min[j];
-		  phin = (x-vcell->theMean[j])/(val[j]-vcell->theMean[j]);
-		  vcell->limit=3;
-		  //printf("val<Min val[%d]=%e Min=%e Mean=%e\n",j,val[j],Min[j],vcell->theMean[j]);
+		  phin = (x-vcell->details->theMean[j])/(val[j]-vcell->details->theMean[j]);
+		  vcell->details->limit=3;
+		  //printf("val<Min val[%d]=%e Min=%e Mean=%e\n",j,val[j],Min[j],vcell->details->theMean[j]);
 		}
 	      else 
 		{
@@ -948,8 +948,8 @@ void DGLimiter::computeMinMaxEdge(DGCell *vcell)
 	    }
 	  else
 	    phin = 1.0;
-	  if(phin<0.0) {phin = 0.0;vcell->limit=2;}
-	  vcell->limSlope[j] = (vcell->limSlope[j]<phin)?vcell->limSlope[j]:phin;
+	  if(phin<0.0) {phin = 0.0;vcell->details->limit=2;}
+	  vcell->details->limSlope[j] = (vcell->details->limSlope[j]<phin)?vcell->details->limSlope[j]:phin;
 	}
     }
 }
@@ -966,8 +966,8 @@ void DGMomentLimiter::limit(DGCell *vcell,double time)
   int k_im1,km1_i,i_km1,im1_k;
   DGCell *left,*right,*top,*bottom;
   left=right=top=bottom=0;
-  mPoint p1 = vcell->pMin;
-  mPoint p2 = vcell->pMax;
+  mPoint p1 = vcell->details->pMin;
+  mPoint p2 = vcell->details->pMax;
   mPoint p=(p1+p2);
   p(0)/=2.;p(1)/=2.;p(2)/=2.;
   mPoint omin,omax;
@@ -983,8 +983,8 @@ void DGMomentLimiter::limit(DGCell *vcell,double time)
         else if (  bound->get(n,1)) other = (DGCell*)bound->get(n,1)->getCell();
       if (other)
 	{
-	  omin = other -> pMin;
-	  omax = other -> pMax;
+	  omin = other -> details->pMin;
+	  omax = other -> details->pMax;
 	  if (p(0) > omax(0)) left = other; 
 	  if (p(0) < omin(0)) right = other; 
 	  if (p(1) > omax(1)) bottom = other; 
@@ -999,9 +999,9 @@ void DGMomentLimiter::limit(DGCell *vcell,double time)
   vcell->theFieldsCoefficients->copy();
 
   for(q=0; q<cSize; q++) {
-    d=(vcell->fOrder+1)*(vcell->fOrder+1)-1;
-    vcell->limit = d;
-    for (k=vcell->fOrder; k>0; k--)
+    d=(vcell->details->fOrder+1)*(vcell->details->fOrder+1)-1;
+    vcell->details->limit = d;
+    for (k=vcell->details->fOrder; k>0; k--)
       {
 	if (stopLimiter) break;
 	
@@ -1032,7 +1032,7 @@ void DGMomentLimiter::limit(DGCell *vcell,double time)
 			    (right->theFieldsCoefficients->get(q,d-1)-vcell->theFieldsCoefficients->get(q,d-1))/sqrt(double (2*k+1)/(2*k-1)), isLimited);
 	    
 	    if (flag || isLimited) {
-	      vcell->limit=d-1;
+	      vcell->details->limit=d-1;
 	      vcell->theFieldsCoefficients->getCopy(q,d) = absmin(tmp1,tmp2);
 	      //vcell->getMeshEntity()->print();
 	    } 
@@ -1077,7 +1077,7 @@ void DGMomentLimiter::limit(DGCell *vcell,double time)
 				(right->theFieldsCoefficients->get(q,im1_k)-vcell->theFieldsCoefficients->get(q,im1_k))/sqrt(double (2*i+1)/(2*i-1)), isLimited);
 		
 		if (flag || isLimited) {
-		  vcell->limit=d-1;
+		  vcell->details->limit=d-1;
 		  if (i) vcell->theFieldsCoefficients->getCopy(q,d) = absmin(tmp1,tmp2);
 		  else vcell->theFieldsCoefficients->getCopy(q,d) = tmp2;
 		} 
@@ -1114,12 +1114,12 @@ void DGMomentLimiter::limit(DGCell *vcell,double time)
 				(right->theFieldsCoefficients->get(q,km1_i)-vcell->theFieldsCoefficients->get(q,km1_i))/sqrt(double (2*k+1)/(2*k-1)), isLimited);
 		
 		if (flag || isLimited) {
-		  vcell->limit=d-1;
+		  vcell->details->limit=d-1;
 		  if (i) vcell->theFieldsCoefficients->getCopy(q,d) = absmin(tmp1,tmp2);
 		  else vcell->theFieldsCoefficients->getCopy(q,d) = tmp1;
 		} 
 		else {
-		  if (vcell->limit != d) 
+		  if (vcell->details->limit != d) 
 		    {
 		      stopLimiter=1;
 		      break;
@@ -1158,8 +1158,8 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
   int k_im1,km1_i,i_km1,im1_k;
   DGCell *left,*right,*top,*bottom;
   left=right=top=bottom=0;
-  mPoint p1 = vcell->pMin;
-  mPoint p2 = vcell->pMax;
+  mPoint p1 = vcell->details->pMin;
+  mPoint p2 = vcell->details->pMax;
   mPoint p=(p1+p2);
   p(0)/=2.;p(1)/=2.;p(2)/=2.;
   mPoint omin,omax;
@@ -1174,8 +1174,8 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
       else if (  bound->get(n,1)) other = (DGCell*)bound->get(n,1)->getCell();
       if (other)
 	{
-	  omin = other -> pMin;
-	  omax = other -> pMax;
+	  omin = other -> details->pMin;
+	  omax = other -> details->pMax;
 	  
 	  if (p(0) > omax(0)) if (bound->getClassification()->getId() != 510) left = other; else right =other;
 	  if (p(0) < omin(0)) if (bound->getClassification()->getId() != 510) right = other; else left =other;
@@ -1194,18 +1194,18 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
  
   double lev_x[16],lev_y[16],rev_x[16],rev_y[16];
   mVector pp1(1,0,0);
-  vcell->getConservationLaw()->compute_left_eigenvectors(vcell->theMean,(mVector&) pp1,(double *)lev_x);
+  vcell->getConservationLaw()->compute_left_eigenvectors(vcell->details->theMean,(mVector&) pp1,(double *)lev_x);
   mVector pp2(0,1,0);
-  vcell->getConservationLaw()->compute_left_eigenvectors(vcell->theMean,pp2,(double*) lev_y);
-   vcell->getConservationLaw()->compute_right_eigenvectors(vcell->theMean,(mVector&)pp1,(double*)rev_x);
-  vcell->getConservationLaw()->compute_right_eigenvectors(vcell->theMean,pp2,(double*)rev_y);
+  vcell->getConservationLaw()->compute_left_eigenvectors(vcell->details->theMean,pp2,(double*) lev_y);
+   vcell->getConservationLaw()->compute_right_eigenvectors(vcell->details->theMean,(mVector&)pp1,(double*)rev_x);
+  vcell->getConservationLaw()->compute_right_eigenvectors(vcell->details->theMean,pp2,(double*)rev_y);
   
-  d=(vcell->fOrder+1)*(vcell->fOrder+1)-1; //the highest index in the coefficient
-  vcell->limit = d; //for plotting - the highest coefficient that was not limited
+  d=(vcell->details->fOrder+1)*(vcell->details->fOrder+1)-1; //the highest index in the coefficient
+  vcell->details->limit = d; //for plotting - the highest coefficient that was not limited
   
   double slope[4],bottom_slope[4],top_slope[4],left_slope[4],right_slope[4];
 
-  for (k=vcell->fOrder; k>0; k--) {// limiting (p,p), (p,p-1), (p-1,p) etc
+  for (k=vcell->details->fOrder; k>0; k--) {// limiting (p,p), (p,p-1), (p-1,p) etc
     if (stopLimiter) break;
     
     for(q=0; q<cSize; q++) 
@@ -1219,7 +1219,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
     
     double ev;
     bool slope_limited=0;
-    for(q=0; q<cSize; q++) {                 //limit coef (k,k) in vertical direction
+    for(q=0; q<cSize; q++) {                 //details->limit coef (k,k) in vertical direction
       ev = dotprod(q,lev_y,slope);
       if (continue_limiting[q] &&(fabs(ev) > small_number))
 	{
@@ -1243,7 +1243,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
       for(q=0; q<cSize; q++) 
 	slope[q]=vcell->theFieldsCoefficients->getCopy(q,d) = dotprod(q,rev_y,tmp);
     
-    for(q=0; q<cSize; q++) {           //limit coef (k,k) in vertical direction
+    for(q=0; q<cSize; q++) {           //details->limit coef (k,k) in vertical direction
       ev = dotprod(q,lev_x,slope);
       if (continue_limiting[q] &&(fabs(ev) > small_number))
 	{
@@ -1257,7 +1257,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
 	  
 	  if (wasLimited[q] || isLimited[q]) {
 	    if (q==0)
-		  vcell->limit=d-1;
+		  vcell->details->limit=d-1;
 	  } 
 	  else  continue_limiting[q] = 0;
 	} 
@@ -1279,7 +1279,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
     
     d--; // put the counter on next coef
   
-	for (i=k-1; i>=0; i--) //limit (i,k)
+	for (i=k-1; i>=0; i--) //details->limit (i,k)
       {
 	if (i<k-1) i_km1 =(k-1)*(k-1)+2*i+1; else i_km1 = i*i+(k-1)*2; 
 	if (i>0) im1_k = k*k+2*(i-1)+1; 
@@ -1291,7 +1291,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
 	    if (left && i) left_slope[q] = vcell->theFieldsCoefficients->get(q,im1_k)-left->theFieldsCoefficients->get(q,im1_k);
 	    if (right && i) right_slope[q] = right->theFieldsCoefficients->get(q,im1_k)-vcell->theFieldsCoefficients->get(q,im1_k);
 	  } 
-	if (i) {//limit (i,k) in x dir
+	if (i) {//details->limit (i,k) in x dir
 	  for(q=0; q<cSize; q++) {
 	    ev = dotprod(q,lev_x,slope);
 	    if (continue_limiting[q] && (fabs(ev) > small_number)) 
@@ -1312,7 +1312,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
 	}
 	else for(q=0; q<cSize; q++) wasLimited[q] = 0;
 	
-	for(q=0; q<cSize; q++) {//limit (i,k) in y dir
+	for(q=0; q<cSize; q++) {//details->limit (i,k) in y dir
 	  ev = dotprod(q,lev_y,slope);
 	  if (continue_limiting[q] && (fabs(ev) > small_number)) {
 	    if (top && bottom)
@@ -1326,7 +1326,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
 	    if (wasLimited[q] || isLimited[q]) 
 	      {
 		if (q==0) 
-			vcell->limit=d-1;
+			vcell->details->limit=d-1;
 			previous_coeff_limited[q]=1;
 	      } 
 	  else previous_coeff_limited[q] = 0;
@@ -1354,7 +1354,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
 	    if (right) right_slope[q] = right->theFieldsCoefficients->get(q,km1_i)-vcell->theFieldsCoefficients->get(q,km1_i);
 	  } 
 	
-	if (i) { //limit (k,i) in y direction
+	if (i) { //details->limit (k,i) in y direction
 	  for(q=0; q<cSize; q++) {
 	    ev = dotprod(q,lev_y,slope);
 	    if (continue_limiting[q] && (ev>small_number))
@@ -1381,7 +1381,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
 	}
 	else for (q=0; q<cSize; q++) wasLimited[q] = 0;
 	
-	for(q=0; q<cSize; q++) { //limit (k,i) in x direction)
+	for(q=0; q<cSize; q++) { //details->limit (k,i) in x direction)
 	  ev = dotprod(q,lev_x,slope);
 	  if (continue_limiting[q] &&(fabs(ev) > small_number))
 	    {
@@ -1395,7 +1395,7 @@ void DGMomentLimiterEuler::limit(DGCell *vcell,double time)
 	      
      	      if (wasLimited[q] || isLimited[q]) {
 		if (q==0)
-			vcell->limit=d-1;
+			vcell->details->limit=d-1;
 	      } 
 	      else {
 		if (!previous_coeff_limited[q]) 
