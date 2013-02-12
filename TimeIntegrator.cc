@@ -112,7 +112,7 @@ double RungeKutta4::advanceInTime(double t, double dt)
       double* coeff = cell->theFieldsCoefficients->get();
       
       dt = cell->getTimeStep();
-      if(cell->details->theFunctionSpace->isOrthogonal())
+      if(cell->theFunctionSpace->isOrthogonal())
 	{
 	  dt_over_detJac = dt/cell->getDetJac();
 	  for(i = 0;i<dof;i++)
@@ -132,7 +132,7 @@ double RungeKutta4::advanceInTime(double t, double dt)
 		dx = 0.0;
 		*soln++ = cell->theFieldsCoefficients->get(k,i); /*Copy Initial values****/   
 		for(int j = 0;j<fSize;j++)
-		  dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
+		  dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
 		*(solnsum++) = dx*dt;
 		cell->theFieldsCoefficients ->get(k,i)+= dx*dt*0.5;
 	      }
@@ -159,7 +159,7 @@ double RungeKutta4::advanceInTime(double t, double dt)
       const double *RHS = cell->theRightHandSide;
       double* coeff = cell->theFieldsCoefficients->get();
       dt = cell->getTimeStep();
-      if(cell->details->theFunctionSpace->isOrthogonal())
+      if(cell->theFunctionSpace->isOrthogonal())
 	{
 	  dt_over_detJac = dt /cell->getDetJac();
 	   for(i = 0;i<dof;i++)
@@ -176,7 +176,7 @@ double RungeKutta4::advanceInTime(double t, double dt)
 	    {
 	      double dx = 0.0;
 	      for(int j = 0;j<fSize;j++)
-		dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
+		dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
 	      *(solnsum++) += 2.0*dx*dt;
 	      cell->theFieldsCoefficients ->get(k,i)= *(soln++) + dx*dt*0.5;
 	    }
@@ -202,7 +202,7 @@ double RungeKutta4::advanceInTime(double t, double dt)
       const double *RHS = cell->theRightHandSide;
       double* coeff = cell->theFieldsCoefficients->get();
       dt = cell->getTimeStep();
-      if(cell->details->theFunctionSpace->isOrthogonal())	
+      if(cell->theFunctionSpace->isOrthogonal())	
 	{
 	  dt_over_detJac = dt /cell->getDetJac();
 	  for(i = 0;i<dof;i++)
@@ -217,7 +217,7 @@ double RungeKutta4::advanceInTime(double t, double dt)
 	  for(int i = 0;i<fSize;i++){
 	    dx = 0.0;
 	    for(int j = 0;j<fSize;j++)
-	      dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
+	      dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
 	    *(solnsum++) += 2.0*dx*dt;
 	    cell->theFieldsCoefficients->get(k,i) =*(soln++) + dx*dt;
 	  }
@@ -246,7 +246,7 @@ double RungeKutta4::advanceInTime(double t, double dt)
       double* coeff = cell->theFieldsCoefficients->get();
       dt = cell->getTimeStep();
       
-      if(cell->details->theFunctionSpace->isOrthogonal())
+      if(cell->theFunctionSpace->isOrthogonal())
 	{
 	  dt_over_detJac = dt /cell->getDetJac();
 	  for(i = 0;i<dof;i++)
@@ -263,7 +263,7 @@ double RungeKutta4::advanceInTime(double t, double dt)
 	  for(int i = 0;i<fSize;i++) {
 	    dx = 0.0;
 	    for(int j = 0;j<fSize;j++)
-	      dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
+	      dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
 	    *solnsum += dx*dt;    
 	    cell->theFieldsCoefficients->get(k,i) = (*soln++) +(*solnsum)/6.0;
 	    resid+=(*solnsum)*(*solnsum)/36.0;
@@ -284,110 +284,153 @@ double RungeKutta4::advanceInTime(double t, double dt)
 double RungeKuttaTVD2::advanceInTime(double t, double dt)
 /*  TVD Second  Order Runge-Kutta integration.*/
 {
-  double  dt_over_detJac,dof;
-  int i,j,k,fSizek;
-  double dx;
-  soln=soln_begin; 
-  mMesh::iter it;
-  const mMesh::iter mesh_begin = theMesh->begin(n);
-  const mMesh::iter mesh_end=theMesh->end(n);
- //  computeL2ProjInCutCells();
-  assembleVolume(t);
-  assembleBoundary(t);  
-  
+    double  dt_over_detJac,dof;
+    int i,j,k,fSizek;
+    double dx;
+    soln=soln_begin; 
+    mMesh::iter it;
+    const mMesh::iter mesh_begin = theMesh->begin(n);
+    const mMesh::iter mesh_end=theMesh->end(n);
+    //  computeL2ProjInCutCells();
+    assembleVolume(t);
+    assembleBoundary(t);  
+
   /**************  SOLVE for K1  **************/
+
+    int rc;
+    void *retval;
   
-  for(it = mesh_begin;it != mesh_end;++it)
-    {
-      mEntity *m    = (*it);
-      DGCell  *cell = (DGCell*)m->getCell();
-      dof = cell->fSize * 
-		  cSize;
-      const double *RHS = cell->theRightHandSide;
-      double* coeff = cell->theFieldsCoefficients->get();
-      /* Copy initial values*/
-      
-      for(i = 0;i<dof;i++) *(soln++) = coeff[i];
-      
-      dt = cell->getTimeStep();
-      if(cell->details->theFunctionSpace->isOrthogonal())
-	{
-	  dt_over_detJac = dt/cell->getDetJac();
-	  for(i = 0;i<dof;i++) coeff[i] += RHS[i]*dt_over_detJac;
-	}
-      else
-	{
-	  int fSize = cell->fSize;
-	  for(k = 0;k<cSize;k++)
-	    {
-	      int fSizek = fSize*k;
-	    for(i = 0;i<fSize;i++)
-	      {
-		dx = 0.0;
-		for(j = 0;j<fSize;j++){
-		  dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
-		}
-		cell->theFieldsCoefficients ->get(k,i)+= dx*dt;
-	      }
-	    }
-	}
-      cell->computeMean();
-      cell->ZeroRHS();
+    //fork all but last chunk
+    for (int i = 0; i < numThreads-1; ++i){
+        threadInfo[n][i]._t = t;
+        threadInfo[n][i]._moreinfo = this;
+        rc = pthread_create(&threadInfo[n][i]._id, NULL,
+                            parallelRungeKuttaTVD2K1, &threadInfo[n][i]);
+        if (rc){
+            printf("ERROR: return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
     }
-  
-  if (theLimiter) limit(t);
-  /**************  SOLVE for K2   ************/
-  //computeL2ProjInCutCells();
-  assembleVolume(t+dt);
-  assembleBoundary(t+dt);  
-  
-  /*  Reset c values */
-  double resid=0.0,tmp;
-  soln=soln_begin;
-  for(it = mesh_begin;it != mesh_end;++it)
+
+    //work on last chunk
+    infoWrapper* info = &threadInfo[n][numThreads-1];
+    for(it = info->_begin; it != info->_end; ++it)
     {
-      mEntity *m = (*it);
-      DGCell *cell = (DGCell*)m->getCell();
-      dof = cell->fSize*cSize; 
-      const double *RHS = cell->theRightHandSide;
-      double* coeff = cell->theFieldsCoefficients->get();
-      dt = cell->getTimeStep(); 
-      if(cell->details->theFunctionSpace->isOrthogonal())
-	{
-	  dt_over_detJac = dt /cell->getDetJac();
-	  for(i = 0;i<dof;i++)
-	    {
-	      coeff[i] = (coeff[i]+RHS[i]*dt_over_detJac+(*soln))*0.5;
-	      tmp = coeff[i]-(*(soln++));
-	      resid+=tmp*tmp;
-	    }
-	}
-      else
-	{
-	  int fSize = cell->fSize;
-	  for(k = 0;k<cSize;k++)
-	    {
-	      fSizek = fSize*k;
-	      for(i = 0;i<fSize;i++)
-		{
-		  dx = 0.0;
-		  for(j = 0;j<fSize;j++){
-		    dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
-		  }
-		  cell->theFieldsCoefficients->get(k,i) = ( cell->theFieldsCoefficients->get(k,i)+
-							    dx*dt +  (*soln))*0.5;
-		  tmp = cell->theFieldsCoefficients->get(k,i)-(*(soln++));
-		  resid+=tmp*tmp;
-		}
-	    }
-	}
-      cell->computeMean();
-      cell->ZeroRHS();
-    }   
+        mEntity *m = (*it);
+        DGCell *cell = (DGCell*)m->getCell();
+        
+        dof = cell->fSize * cSize;
+        const double *RHS = cell->theRightHandSide;
+        double* coeff = cell->theFieldsCoefficients->get();
+        /* Copy initial values*/
+
+        for(i = 0; i < dof; i++) * (soln++) = coeff[i];
+
+        dt = cell->getTimeStep();
+        if(cell->theFunctionSpace->isOrthogonal())
+        {
+            dt_over_detJac = dt/cell->getDetJac();
+            for(i = 0;i<dof;i++) coeff[i] += RHS[i]*dt_over_detJac;
+        }
+        else
+        {
+            int fSize = cell->fSize;
+            for(k = 0;k<cSize;k++)
+            {
+                int fSizek = fSize*k;
+                for(i = 0;i<fSize;i++)
+                {
+                    dx = 0.0;
+                    for(j = 0;j<fSize;j++){
+                        dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
+                    }
+                    cell->theFieldsCoefficients ->get(k,i)+= dx*dt;
+                }
+            }
+        }
+        cell->computeMean();
+        cell->ZeroRHS();
+    }
+
+    //wait for all threads to finish
+    for (int i = 0; i < numThreads-1; ++i){
+        pthread_join(threadInfo[n][i]._id, &retval);
+    }
+
   
-  if (theLimiter) limit(t+dt);
-  //computeL2ProjInCutCells();
-  return resid;
+    if (theLimiter) limit(t);
+    /**************  SOLVE for K2   ************/
+    //computeL2ProjInCutCells();
+    assembleVolume(t+dt);
+    assembleBoundary(t+dt);  
+
+    /*  Reset c values */
+    double resid = 0.0, tmp;
+    soln = soln_begin; 
+
+    //fork all but last chunk
+    for (int i = 0; i < numThreads-1; ++i){
+        threadInfo[n][i]._t = t;
+        threadInfo[n][i]._moreinfo = this;
+        rc = pthread_create(&threadInfo[n][i]._id, NULL,
+                            parallelRungeKuttaTVD2K2, &threadInfo[n][i]);
+        if (rc){
+            printf("ERROR: return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
+    }
+
+    //work on last chunk
+    for(it = info->_begin; it != info->_end; ++it)
+    {
+        mEntity *m = (*it);
+        DGCell *cell = (DGCell*)m->getCell();
+        dof = cell->fSize*cSize; 
+        const double *RHS = cell->theRightHandSide;
+        double* coeff = cell->theFieldsCoefficients->get();
+        dt = cell->getTimeStep(); 
+        if(cell->theFunctionSpace->isOrthogonal())
+        {
+            dt_over_detJac = dt /cell->getDetJac();
+            for(i = 0;i<dof;i++)
+            {
+                coeff[i] = (coeff[i]+RHS[i]*dt_over_detJac+(*soln))*0.5;
+                tmp = coeff[i]-(*(soln++));
+                resid+=tmp*tmp;
+            }
+        }
+        else
+        {
+            int fSize = cell->fSize;
+            for(k = 0;k<cSize;k++)
+            {
+                fSizek = fSize*k;
+                for(i = 0;i<fSize;i++)
+                {
+                    dx = 0.0;
+                    for(j = 0;j<fSize;j++)
+                    {
+                        dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
+                    }
+                    cell->theFieldsCoefficients->get(k,i) = ( cell->theFieldsCoefficients->get(k,i)+
+                                                            dx*dt +  (*soln))*0.5;
+                    tmp = cell->theFieldsCoefficients->get(k,i)-(*(soln++));
+                    resid+=tmp*tmp;
+                }
+            }
+        }
+        cell->computeMean();
+        cell->ZeroRHS();
+    }
+
+    //wait for all threads to finish
+    for (int i = 0; i < numThreads-1; ++i){
+        pthread_join(threadInfo[n][i]._id, &retval);
+    }
+
+    if (theLimiter) limit(t+dt);
+    //computeL2ProjInCutCells();
+    return resid;
 }
 
 /*********************************************************/
@@ -818,7 +861,7 @@ double RungeKuttaTVD3::advanceInTime(double t, double dt)
       for(i = 0;i<dof;i++) *(soln++) = coeff[i];
       
       dt = cell->getTimeStep();
-      if(cell->details->theFunctionSpace->isOrthogonal())
+      if(cell->theFunctionSpace->isOrthogonal())
 	{
 	  dt_over_detJac = dt/cell->getDetJac();
 	  for(i = 0;i<dof;i++) coeff[i] += RHS[i]*dt_over_detJac;
@@ -831,7 +874,7 @@ double RungeKuttaTVD3::advanceInTime(double t, double dt)
 	      {
 		dx = 0.0;
 		for(j = 0;j<fSize;j++){
-		  dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
+		  dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
 		}
 		cell->theFieldsCoefficients ->get(k,i)+= dx*dt;
 		
@@ -862,7 +905,7 @@ double RungeKuttaTVD3::advanceInTime(double t, double dt)
       double* coeff = cell->theFieldsCoefficients->get();
 
       dt = cell->getTimeStep();
-      if(cell->details->theFunctionSpace->isOrthogonal())
+      if(cell->theFunctionSpace->isOrthogonal())
 	{
 	  dt_over_detJac = dt/cell->getDetJac();
 	   for(i = 0;i<dof;i++)
@@ -876,7 +919,7 @@ double RungeKuttaTVD3::advanceInTime(double t, double dt)
 	      {
 		dx = 0.0;
 		for(j = 0;j<fSize;j++){
-		  dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
+		  dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
 		}
 		cell->theFieldsCoefficients ->get(k,i)= 0.25*(cell->theFieldsCoefficients ->get(k,i)+ dx*dt+3.*(*soln++));
 	      }
@@ -906,7 +949,7 @@ double RungeKuttaTVD3::advanceInTime(double t, double dt)
       const double *RHS = cell->theRightHandSide;
       dt = cell->getTimeStep(); 
 
-      if(cell->details->theFunctionSpace->isOrthogonal())
+      if(cell->theFunctionSpace->isOrthogonal())
 	{
 	  dt_over_detJac = dt /cell->getDetJac();
 	  for(i = 0;i<dof;i++)
@@ -924,7 +967,7 @@ double RungeKuttaTVD3::advanceInTime(double t, double dt)
 	      {
 		dx = 0.0;
 		for(j = 0;j<fSize;j++){
-		  dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
+		  dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSizek];
 		}
 		cell->theFieldsCoefficients->get(k,i) = (2.0*( cell->theFieldsCoefficients->get(k,i)+
 							  dx*dt)+(*soln))/3.0;
@@ -964,7 +1007,7 @@ double ForwardEuler::advanceInTime(double t, double dt)
       double* coeff = cell->theFieldsCoefficients->get();
       dt = cell->getTimeStep();
       
-      if(cell->details->theFunctionSpace->isOrthogonal())
+      if(cell->theFunctionSpace->isOrthogonal())
 	{
 	  dt_over_detJac = dt /cell->getDetJac();
 	  for(i = 0;i<dof;i++)
@@ -984,7 +1027,7 @@ double ForwardEuler::advanceInTime(double t, double dt)
 		{
 		  dx = 0.0;
 		  for(j = 0;j<fSize;j++)
-		    dx += cell->details->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
+		    dx += cell->theInvertMassMatrix[i][j] * cell->theRightHandSide[j+fSize*k];
 		  
 		  cell->theFieldsCoefficients->get(k,i) += dx*dt;
 		  resid += dx*dx;
@@ -1037,7 +1080,7 @@ double Multigrid::advanceInTime(double t, double dt)
       const double *RHS = cell->theRightHandSide;
       //double* coeff = cell->theFieldsCoefficients->get();
       //cell->getMapping()->COG(u,v,w);
-      //cell->details->theFunctionSpace->fcts(u,v,w,fcts);
+      //cell->theFunctionSpace->fcts(u,v,w,fcts);
       //cell->interpolate(fcts,val);
 	  double  func = cell->pt(0).fcts[0];
 

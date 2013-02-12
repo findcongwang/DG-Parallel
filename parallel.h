@@ -15,11 +15,16 @@ public:
 	mMesh::iter _begin;
 	mMesh::iter _end;
 	double _t;
+	void *_moreinfo;
 	infoWrapper(mMesh::iter begin, mMesh::iter end, double t, pthread_t id);
 };
 
 void *parallelVolume(void *info);
 void *parallelBoundary(void *info);
+
+//RungeKutta2
+void *parallelRungeKuttaTVD2K1(void *info);
+void *parallelRungeKuttaTVD2K2(void *info);
 
 timespec diff(timespec start, timespec end);
 

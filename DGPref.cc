@@ -1363,8 +1363,8 @@ mMesh::iter it;
       mEntity *ent = (*it);
       if (ent->getClassification()->getId() == 510 ||ent->getClassification()->getId() == 610)
 	  {
-      DGBoundaryCell* cell = (DGBoundaryCell*) ent->getCell();
-      cell->setPeriodicBC();
+          DGBoundaryCell* cell = (DGBoundaryCell*) ent->getCell();
+          cell->setPeriodicBC();
 	  }
   }
 }

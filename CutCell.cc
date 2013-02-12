@@ -46,12 +46,12 @@ CutCell::CutCell (ConservationLaw*l,
 CutCell::~CutCell ()
 {
   delete theFieldsCoefficients;
-  delete [] details->theMean;
+  delete [] theMean;
   delete [] details->limSlope;
   delete [] theRightHandSide;
-  delete details->theFunctionSpace;
+  delete theFunctionSpace;
   delete details->theMapping;
-  freeMatrix(details->theInvertMassMatrix);
+  freeMatrix(theInvertMassMatrix);
 }
 
 void CutCell::init ()
@@ -73,7 +73,7 @@ void CutCell::init ()
 		  pg.reflCell = details->theGeometry->findReflPoint(this, PG.x,PG.y,PG.z,xr,yr,zr);
           pg.reflCell->getMapping()->invert(xr,yr,zr,u,v,w);
 		  pg.fctsAtReflPoint = new double [fSize];
-      pg.reflCell->details->theFunctionSpace->fcts(u,v,w,pg.fctsAtReflPoint);
+      pg.reflCell->theFunctionSpace->fcts(u,v,w,pg.fctsAtReflPoint);
 	  }
       double r = sqrt(PG.x*PG.x+PG.y*PG.y);   //generalize!!!!!
       pg.N(0) = PG.x/r;
@@ -107,7 +107,7 @@ void CutCell::L2ProjCutCell ()
 	double tmp = (val[1]*val[1] + val[2]*val[2])/(val[0]*val[0]);
     }
 
-  if (details->theFunctionSpace->isOrthogonal())
+  if (theFunctionSpace->isOrthogonal())
     {
       double inv_volume = 1./(2.*details->volume);
       for(i=0;i<cSize;++i)
@@ -121,7 +121,7 @@ void CutCell::L2ProjCutCell ()
 	  {
 	    double dxi = 0.0;
 	    for(int j = 0;j<fSize;++j){
-	      dxi += details->theInvertMassMatrix[i][j] * theRightHandSide[j+fSize*k];
+	      dxi += theInvertMassMatrix[i][j] * theRightHandSide[j+fSize*k];
 	    }
 	    theFieldsCoefficients->get(k,i) = dxi;
 	  }

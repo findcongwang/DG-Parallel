@@ -41,6 +41,21 @@ int numComputeBoundaryCalls = 0;
 
 timespec timer1load, timer2load;
 
+timespec timer_start, timer_stop;
+
+void start_timer()
+{
+    clock_gettime(CLOCK_MONOTONIC, &timer_start);
+}
+
+void stop_timer(const char *label)
+{
+    clock_gettime(CLOCK_MONOTONIC, &timer_stop);
+    printf("[TIMER: DG-PARALLEL], %s, %f\n", label, 
+        diff(timer_start, timer_stop).tv_sec + 
+        diff(timer_start, timer_stop).tv_nsec * 0.000000001);
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -119,6 +134,8 @@ int main(int argc, char *argv[])
 
     //collect timer info
     clock_gettime(CLOCK_MONOTONIC, &timer2load);
+
+    //printf("[TIMER: DG-PARALLEL] running on %s\n", argv[1]);
 
     //Define chunks
     for (int i = 0; i < 4; ++i)

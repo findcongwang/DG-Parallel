@@ -7,7 +7,7 @@ class DGLimiter;
 
 class TimeIntegrator
 {
-  protected:
+  public:
   int n;// dimension of the mesh
   const int cSize;//number of equations
   int dof; //number of degrees of freedom
@@ -23,7 +23,6 @@ class TimeIntegrator
   void limit(const mMesh::iter begin, const mMesh::iter end, double time);
   void computeFullJump();
   void computeL2ProjInCutCells();
- public:
   TimeIntegrator(mDGMesh *,DGLimiter *, int cSize,int dof);
   virtual ~TimeIntegrator(){};
    virtual double advanceInTime(double t, double dt) = 0;

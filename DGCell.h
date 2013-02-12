@@ -45,7 +45,7 @@ public:
     double x,y,z;  //coordinates in physical space
     double JacTimesWeight; //precompute (Jac*weight)
     vector<mVector> grads;
-    double*  fcts;
+    const double*  fcts;
     volumeGaussPoint(){}
     ~volumeGaussPoint(){grads.clear();}
     volumeGaussPoint(const volumeGaussPoint &);
@@ -56,11 +56,10 @@ public:
     Geometry        *theGeometry;
     vector<double>  theErrorRightHandSide;
     vector<double>  *theErrorCoefficients;
-    FunctionSpace   *theFunctionSpace;  
     FunctionSpace   *theErrorFunctionSpace;
     Mapping         *theMapping;
     GaussIntegrator *theGaussIntegrator;
-    double          **theInvertMassMatrix, *theMean,*theErrorMean,*limSlope,error, jump, fullJump,
+    double          *theErrorMean,*limSlope,error, jump, fullJump,
                     **theErrorMassMatrix,**theErrorInvertMassMatrix;
     double          errNum,errDen;
     mPoint          pMin,pMax; 
@@ -73,8 +72,6 @@ public:
     double          volume;
     double          perimeter;
     double          maxH, minH,jumpError, maxVal;
-    double          detJac;
-    double          dt;
     list<mEntity *> allSubs;
     list<mEntity *> allVert;
     double          *deltaUp0;
@@ -86,16 +83,20 @@ public:
 
 class DGCell:public mAttachableData
 {
-protected:
+public:
     ConservationLaw	*theConservationLaw;
     mEntity	        *theMeshEntity;
-    double          *theRightHandSide;
     vector<volumeGaussPoint>  volumeGaussPoints;
-    DG_Dofs       	*theFieldsCoefficients;
+    double          *theRightHandSide;
+    FunctionSpace   *theFunctionSpace; 
+    double          detJac;
+    double          dt;
+    double          **theInvertMassMatrix;
+    DG_Dofs         *theFieldsCoefficients;
     short	fSize;           // size of the Function Space
     short	cSize;            // number of equations
+    double  *theMean;
     short	nbPtGauss;
-public:
     DGCell_ColdFields *details;
 
     void computeMassMatrices();
@@ -110,7 +111,7 @@ public:
     void cleanup();
     volumeGaussPoint &  pt(int i) {return volumeGaussPoints[i];}
     Mapping *getMapping(){return details->theMapping;}
-    FunctionSpace *getFunctionSpace(){return details->theFunctionSpace;}
+    FunctionSpace *getFunctionSpace(){return theFunctionSpace;}
     ConservationLaw *getConservationLaw(){return theConservationLaw;}
     mEntity* getMeshEntity(){return theMeshEntity;}
     list<mEntity*> getAllNeighbors() {return details->allVert;} 
@@ -185,7 +186,7 @@ public:
     void computeMinH (); 
     double getMaxH() const; 
     double getMinH() const;
-    double getDetJac() const {return details->detJac;}
+    double getDetJac() const {return detJac;}
     void computeVolume();
     double getVolume() const {return details->volume;}
     void computePerimeter();
@@ -206,10 +207,10 @@ public:
     double computeMAXEV();
     void computeTimeStep(double cfl)
     {
-       details->dt=details->cellSize*cfl/((2.*details->fOrder+1.)*computeMAXEV());
+       dt=details->cellSize*cfl/((2.*details->fOrder+1.)*computeMAXEV());
     }
-    double getTimeStep(){return details->dt;}
-    void setTimeStep(double t){details->dt = t;}
+    double getTimeStep(){return dt;}
+    void setTimeStep(double t){dt = t;}
   virtual void interpolateRefl(const double* fct, mVector &N, DGCell* reflCell, double *Q) const {
   double tmp=1.0;
   }
@@ -333,7 +334,7 @@ protected:
 inline void DGCell::interpolate(double u, double v, double w, double *field)
 {
   double fct[MaxNbFunctions]; 
-  details->theFunctionSpace->fcts(u,v,w,fct);
+  theFunctionSpace->fcts(u,v,w,fct);
   int i,j;
   double *tmp=field;
   const double *a =&(theFieldsCoefficients->theFieldsCoefficients[0])[0];
