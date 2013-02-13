@@ -33,11 +33,7 @@ unsigned int numCPU;
 unsigned int numThreads;
 vector<infoWrapper> threadInfo[3];
 
-double timeComputeVolumeCalls = 0;
-int numComputeVolumeCalls = 0;
-
-double timeComputeBoundaryCalls = 0;
-int numComputeBoundaryCalls = 0;
+double timeRK = 0;
 
 timespec timer1load, timer2load;
 
@@ -228,13 +224,13 @@ int main(int argc, char *argv[])
     printf("[OUTPUT: DG-PARALLEL] Number of CPUs online: %d\n", numCPU);
     printf("[OUTPUT: DG-PARALLEL] Runtime of importing mesh: %f seconds\n", 
             diff(timer1load,timer2load).tv_sec + diff(timer1load,timer2load).tv_nsec * 0.000000001);
-    printf("[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: %f seconds\n", 
+    /*printf("[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: %f seconds\n", 
         timeComputeVolumeCalls / numComputeVolumeCalls);
     printf("[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: %f seconds\n", 
         timeComputeBoundaryCalls / numComputeBoundaryCalls);
     printf("[OUTPUT: DG-PARALLEL] Time spent in Volume: %f number of instances called: %d\n", timeComputeVolumeCalls, numComputeVolumeCalls);
-    printf("[OUTPUT: DG-PARALLEL] Time spent in Boundary: %f number of instances called: %d\n", timeComputeBoundaryCalls, numComputeBoundaryCalls);
-
+    printf("[OUTPUT: DG-PARALLEL] Time spent in Boundary: %f number of instances called: %d\n", timeComputeBoundaryCalls, numComputeBoundaryCalls);*/
+    printf("[OUTPUT: DG-PARALLEL] Time spent in RK %f\n", timeRK);
     clock_gettime(CLOCK_MONOTONIC, &timer2load);
     printf("[OUTPUT: DG-PARALLEL] Total runtime: %f seconds\n", 
             diff(timer1load,timer2load).tv_sec + diff(timer1load,timer2load).tv_nsec * 0.000000001);

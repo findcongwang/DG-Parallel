@@ -23,12 +23,7 @@ extern unsigned int numCPU;
 extern unsigned int numThreads;
 extern vector<infoWrapper> threadInfo[4];
 
-extern double timeComputeVolumeCalls;
-extern int numComputeVolumeCalls;
-
-extern double timeComputeBoundaryCalls;
-extern int numComputeBoundaryCalls;
-
+extern double timeRK;
 timespec timer1, timer2;
 
 TimeIntegrator::TimeIntegrator(mDGMesh *m,DGLimiter *l,int NbFields, int DOF):theMesh(m),theLimiter(l),
@@ -284,6 +279,9 @@ double RungeKutta4::advanceInTime(double t, double dt)
 double RungeKuttaTVD2::advanceInTime(double t, double dt)
 /*  TVD Second  Order Runge-Kutta integration.*/
 {
+    //timer start
+    clock_gettime(CLOCK_MONOTONIC, &timer1);
+
     double  dt_over_detJac,dof;
     int i,j,k,fSizek;
     double dx;
@@ -429,7 +427,13 @@ double RungeKuttaTVD2::advanceInTime(double t, double dt)
     }
 
     if (theLimiter) limit(t+dt);
-    //computeL2ProjInCutCells();
+    
+
+    //update timer infos
+    clock_gettime(CLOCK_MONOTONIC, &timer2);
+    timeRK += diff(timer1,timer2).tv_sec;
+    timeRK += diff(timer1,timer2).tv_nsec * 0.000000001;
+
     return resid;
 }
 
@@ -1327,9 +1331,6 @@ double Multigrid::advanceInTime(double t, double dt)
 
 void TimeIntegrator::assembleVolume(double t)
 {
-	//timer start
-	clock_gettime(CLOCK_MONOTONIC, &timer1);
-
 	mMesh::iter it;
 	int rc;
 	void *retval;
@@ -1358,19 +1359,10 @@ void TimeIntegrator::assembleVolume(double t)
 	for (int i = 0; i < numThreads-1; ++i){
 		pthread_join(threadInfo[n][i]._id, &retval);
 	}
-
-	//update timer infos
-	clock_gettime(CLOCK_MONOTONIC, &timer2);
-	timeComputeVolumeCalls += diff(timer1,timer2).tv_sec;
-	timeComputeVolumeCalls += diff(timer1,timer2).tv_nsec * 0.000000001;
-	numComputeVolumeCalls++;
 }
 
 void TimeIntegrator::assembleBoundary(double t)
 { 
-	//timer start
-	clock_gettime(CLOCK_MONOTONIC, &timer1);
-
     mMesh::iter it;
     int rc;
     void *retval;
@@ -1417,12 +1409,6 @@ void TimeIntegrator::assembleBoundary(double t)
     for (int i = 0; i < numThreads-1; ++i){
         pthread_join(threadInfo[n-1][i]._id, &retval);
     }
-
-	//update timer infos
-	clock_gettime(CLOCK_MONOTONIC, &timer2);
-	timeComputeBoundaryCalls += diff(timer1,timer2).tv_sec;
-	timeComputeBoundaryCalls += diff(timer1,timer2).tv_nsec * 0.000000001;
-	numComputeBoundaryCalls++;
 }
 
 void TimeIntegrator::limit(double time)
