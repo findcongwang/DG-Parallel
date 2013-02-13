@@ -10,9 +10,14 @@
 #include <stdio.h>
 #include <iostream>
 #include <cstring>
-//#include <ostream.h>
+#include <cstdlib>
+#include "parallel.h"
 #include "Constants.h"
 using namespace std;
+
+extern unsigned int numCPU;
+extern unsigned int numThreads;
+extern vector<infoWrapper> threadInfo[4];
 
 DGSensor::DGSensor(char *name, double DT)
   :  DTsampleFrequency(DT),TOLD(0.0)

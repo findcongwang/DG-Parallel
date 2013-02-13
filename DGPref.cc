@@ -14,6 +14,12 @@
 #include "Constants.h"
 #include <math.h>
 #include <stdio.h>
+#include <cstdlib>
+#include "parallel.h"
+
+extern unsigned int numCPU;
+extern unsigned int numThreads;
+extern vector<infoWrapper> threadInfo[4];
 
 int modifyP(DGCell *theCell,
 	    double MaxErr, double MinErr,
@@ -254,15 +260,42 @@ void DGAnalysis::ExactError(double time, double &error)
 
 void DGAnalysis::LinfError(double time, double &error)
 {
-  error = 0.0;
-  double cell_err;
-  mMesh::iter end = theMesh->end(n);
-  for(mMesh::iter it = theMesh->begin(n);it != end;++it)
+    error = 0.0;
+    double cell_err;
+    mMesh::iter it;
+    int rc;
+    void *retval;
+
+    //fork all but last chunk
+    for (int i = 0; i < numThreads-1; ++i){
+        threadInfo[n][i]._t = 0.0;
+        threadInfo[n][i]._moreinfo = &time;
+        rc = pthread_create(&threadInfo[n][i]._id, NULL,
+                            parallelLinfError, &threadInfo[n][i]);
+        if (rc){
+            printf("ERROR: return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
+    }
+
+    //work on last chunk
+    infoWrapper* info = &threadInfo[n][numThreads-1];
+    for(it = info->_begin; it != info->_end; ++it)
     {
-      mEntity *m = (*it);
-      DGCell *cell = (DGCell*)m->getCell();
-      cell_err=cell->LinfError(time);
-	  if (error<cell_err) error=cell_err;
+        mEntity *m = (*it);
+        DGCell *cell = (DGCell*)m->getCell();
+        cell_err=cell->LinfError(time);
+        if (error<cell_err) error=cell_err;
+    }
+
+    //wait for all threads to finish
+    for (int i = 0; i < numThreads-1; ++i){
+        pthread_join(threadInfo[n][i]._id, &retval);
+    }
+
+    //keep largest info->_t (error)
+    for (int i = 0; i < numThreads; ++i){
+        if(error < threadInfo[n][i]._t) error = threadInfo[n][i]._t;
     }
 }
 

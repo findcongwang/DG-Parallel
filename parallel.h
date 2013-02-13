@@ -15,6 +15,7 @@ public:
 	mMesh::iter _begin;
 	mMesh::iter _end;
 	double _t;
+	int _n;
 	void *_moreinfo;
 	infoWrapper(mMesh::iter begin, mMesh::iter end, double t, pthread_t id);
 };
@@ -25,6 +26,9 @@ void *parallelBoundary(void *info);
 //RungeKutta2
 void *parallelRungeKuttaTVD2K1(void *info);
 void *parallelRungeKuttaTVD2K2(void *info);
+
+void *parallelLinfError(void *info);
+void *parallelExportGmshP1(void *info);
 
 timespec diff(timespec start, timespec end);
 
