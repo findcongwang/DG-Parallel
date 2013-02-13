@@ -16,3 +16,4 @@
 *.pos
 */test/res*
 *.*~
+*callgrind.out.*

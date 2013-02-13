@@ -185,6 +185,22 @@ void *parallelRungeKuttaTVD2K2(void *ptr)
     pthread_exit(0);
 }
 
+void *parallelAdaptTimeStep(void *ptr)
+{
+    infoWrapper* info = (infoWrapper*)ptr;
+    mMesh::iter it;
+    double CFLMAX = info->_t;
+    double dt = *(double*)info->_moreinfo;
+    for(it = info->_begin; it != info->_end; ++it)
+    {
+        mEntity *m = (*it);
+        DGCell *cell = (DGCell*)m->getCell();
+        cell->adaptTimeStep(CFLMAX,dt);
+    }
+    info->_t = dt;          //put result in _t
+    pthread_exit(0);
+}
+
 void *parallelLinfError(void *ptr)
 {
     infoWrapper* info = (infoWrapper*)ptr;

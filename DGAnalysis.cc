@@ -20,8 +20,14 @@
 #include <time.h>
 #include <cstring>
 #include <cstdlib>
+#include <vector>
+#include "parallel.h"
 
 using namespace std;
+
+extern unsigned int numCPU;
+extern unsigned int numThreads;
+extern vector<infoWrapper> threadInfo[4];
 
 static void recurGetAllsubs(mEntity *ent, list<mEntity*> &lis)
 {
@@ -302,54 +308,87 @@ DGAnalysis::~DGAnalysis ()
 
 void DGAnalysis::run()
 {
-  int P_ref_counter = 0;
-  double dt;
-  printf("dg running -- final time = %f...\n",TEND);
-  double TOLD = 0.0;
-  double cputime = 0.0;
-  int sizen   = theMesh->size(n);
-  int sizenm1 = theMesh->size(n-1);
-  double error; ExactError(TACT,error); printf("Error in density L1 norm %e\n", error);
-  while (TACT < TEND)
-    {
-      clock_t t1 = clock();
-      if(HREF && TACT - TOLD > REF_SAMPLING_TIME)
+	int P_ref_counter = 0;
+	double dt;
+	printf("dg running -- final time = %f...\n",TEND);
+	double TOLD = 0.0;
+	double cputime = 0.0;
+	int sizen   = theMesh->size(n);
+	int sizenm1 = theMesh->size(n-1);
+	double error; ExactError(TACT,error); printf("Error in density L1 norm %e\n", error);
+	while (TACT < TEND)
 	{
-	  TOLD = TACT;
-	  adaptH ();
-	  // computeNormalsToCurvedBoundaries();
-	  sizen   = theMesh->size(n);
-	  sizenm1 = theMesh->size(n-1);
-	}
-    /*  if(PREF && TACT - TOLD > REF_SAMPLING_TIME)
-	{
-	  TOLD = TACT;
-	  adaptP();
- 	}*/
-	   if(PREF && P_ref_counter>9)
-	{
-	  adaptP();
-	  P_ref_counter=0;
- 	}
-	   else if (PREF) P_ref_counter++;
-      //EVALUATE SENSORS
-      evalSensors();
-      //exit(0);
-      // COMPUTE TIME STEP USING CFL CONDITION --------------
-      dt = 500;//arbitrary number to start with; actual dt is computed below
-      int N;
-      mMesh::iter it;
-      mMesh::iter mesh_end=theMesh->end(n);
+		clock_t t1 = clock();
+		if(HREF && TACT - TOLD > REF_SAMPLING_TIME)
+		{
+			TOLD = TACT;
+			adaptH ();
+			// computeNormalsToCurvedBoundaries();
+			sizen   = theMesh->size(n);
+			sizenm1 = theMesh->size(n-1);
+		}
+		/*  if(PREF && TACT - TOLD > REF_SAMPLING_TIME)
+		{
+		TOLD = TACT;
+		adaptP();
+		}*/
+		if(PREF && P_ref_counter>9)
+		{
+			adaptP();
+			P_ref_counter=0;
+		}
+		else if (PREF) P_ref_counter++;
+		//EVALUATE SENSORS
+		evalSensors();
+		//exit(0);
+		// COMPUTE TIME STEP USING CFL CONDITION --------------
+		dt = 500;//arbitrary number to start with; actual dt is computed below
+		int N;
+		mMesh::iter it;
+		mMesh::iter mesh_end=theMesh->end(n);
+		int rc;
+		void *retval;
+		infoWrapper* info;
       
-      switch(timeSteppingMode)
+    switch(timeSteppingMode)
 	{
 	case 0:
-	  for(it = theMesh->begin(n);it != mesh_end;++it)
-	    {
-	      mEntity *m = (*it);
-	      DGCell *cell = (DGCell*)m->getCell();
-	      cell->adaptTimeStep(CFLMAX,dt);
+
+	    //fork all but last chunk
+	    for (int i = 0; i < numThreads-1; ++i){
+	        threadInfo[n][i]._t = CFLMAX;
+	        threadInfo[n][i]._moreinfo = &dt;
+	        rc = pthread_create(&threadInfo[n][i]._id, NULL,
+	                            parallelAdaptTimeStep, &threadInfo[n][i]);
+	        if (rc){
+	            printf("ERROR: return code from pthread_create() is %d\n", rc);
+	            exit(-1);
+	        }
 	    }
+	    //work on last chunk
+	    info = &threadInfo[n][numThreads-1];
+	    for(it = info->_begin; it != info->_end; ++it)
+	    {
+	        mEntity *m = (*it);
+	        DGCell *cell = (DGCell*)m->getCell();
+	 		cell->adaptTimeStep(CFLMAX,dt);
+	    }
+	    //wait for all threads to finish
+	    for (int i = 0; i < numThreads-1; ++i){
+	        pthread_join(threadInfo[n][i]._id, &retval);
+	    }
+	    //keep smallest info->_t (dt)
+	    for (int i = 0; i < numThreads-1; ++i){
+	        if(dt > threadInfo[n][i]._t) dt = threadInfo[n][i]._t;
+	    }
+
+		/*for(it = theMesh->begin(n);it != mesh_end;++it)
+		{
+			mEntity *m = (*it);
+			DGCell *cell = (DGCell*)m->getCell();
+			cell->adaptTimeStep(CFLMAX,dt);
+		} */
+
 	  N = (ceil)((TEND-TACT)/dt);
           dt = (double)(TEND-TACT)/(N);
 	  for(it = theMesh->begin(n);it != mesh_end;++it)
@@ -370,12 +409,42 @@ void DGAnalysis::run()
 	    }
 	  break;
 	case 2:
-	  for(it = theMesh->begin(n);it != mesh_end;++it)
+
+
+	    //fork all but last chunk
+	    for (int i = 0; i < numThreads-1; ++i){
+	        threadInfo[n][i]._t = CFLMAX;
+	        threadInfo[n][i]._moreinfo = &dt;
+	        rc = pthread_create(&threadInfo[n][i]._id, NULL,
+	                            parallelAdaptTimeStep, &threadInfo[n][i]);
+	        if (rc){
+	            printf("ERROR: return code from pthread_create() is %d\n", rc);
+	            exit(-1);
+	        }
+	    }
+	    //work on last chunk
+	    info = &threadInfo[n][numThreads-1];
+	    for(it = info->_begin; it != info->_end; ++it)
 	    {
-	      mEntity *m = (*it);
-	      DGCell *cell = (DGCell*)m->getCell();
-	      cell->adaptTimeStep(CFLMAX,dt);
-	    } 
+	        mEntity *m = (*it);
+	        DGCell *cell = (DGCell*)m->getCell();
+	 		cell->adaptTimeStep(CFLMAX,dt);
+	    }
+	    //wait for all threads to finish
+	    for (int i = 0; i < numThreads-1; ++i){
+	        pthread_join(threadInfo[n][i]._id, &retval);
+	    }
+	    //keep smallest info->_t (dt)
+	    for (int i = 0; i < numThreads; ++i){
+	        if(dt > threadInfo[n][i]._t) dt = threadInfo[n][i]._t;
+	    }
+
+/*		for(it = theMesh->begin(n);it != mesh_end;++it)
+		{
+			mEntity *m = (*it);
+			DGCell *cell = (DGCell*)m->getCell();
+			cell->adaptTimeStep(CFLMAX,dt);
+		} */
 	  dt *=pow(2.,theMesh->getNbBins()-1); 
 	  N = (ceil)((TEND-TACT)/dt);
           dt = (double)(TEND-TACT)/(N);

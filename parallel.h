@@ -27,6 +27,9 @@ void *parallelBoundary(void *info);
 void *parallelRungeKuttaTVD2K1(void *info);
 void *parallelRungeKuttaTVD2K2(void *info);
 
+//DGAnalysis
+void *parallelAdaptTimeStep(void *info);
+
 void *parallelLinfError(void *info);
 void *parallelExportGmshP1(void *info);
 
