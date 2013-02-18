@@ -342,7 +342,7 @@ void DGAnalysis::run()
 		clock_gettime(CLOCK_MONOTONIC, &timer2);
 	    time_sec += diff(timer1,timer2).tv_sec;
 	    time_sec += diff(timer1,timer2).tv_nsec * 0.000000001;
-	    printf("[OUTPUT-PROFILER] serial vol took: %f\n", time_sec);
+	    printf("[OUTPUT: PROFILER] serial vol took: %f\n", time_sec);
 
 		//volContri parallel
 		time_sec = 0;
@@ -379,7 +379,7 @@ void DGAnalysis::run()
 		clock_gettime(CLOCK_MONOTONIC, &timer2);
 	    time_sec += diff(timer1,timer2).tv_sec;
 	    time_sec += diff(timer1,timer2).tv_nsec * 0.000000001;
-	    printf("[OUTPUT-PROFILER] parallel vol took: %f\n", time_sec);
+	    printf("[OUTPUT: PROFILER] parallel vol took: %f\n", time_sec);
 
 		//boundContri serial
 		time_sec = 0;
@@ -420,7 +420,7 @@ void DGAnalysis::run()
 		clock_gettime(CLOCK_MONOTONIC, &timer2);
 	    time_sec += diff(timer1,timer2).tv_sec;
 	    time_sec += diff(timer1,timer2).tv_nsec * 0.000000001;
-	    printf("[OUTPUT-PROFILER] serial bound took: %f\n", time_sec);	    
+	    printf("[OUTPUT: PROFILER] serial bound took: %f\n", time_sec);	    
 
 	    //boundContri parallel
 		time_sec = 0;
@@ -474,7 +474,7 @@ void DGAnalysis::run()
 		clock_gettime(CLOCK_MONOTONIC, &timer2);
 	    time_sec += diff(timer1,timer2).tv_sec;
 	    time_sec += diff(timer1,timer2).tv_nsec * 0.000000001;
-	    printf("[OUTPUT-PROFILER] parallel bound took: %f\n", time_sec);
+	    printf("[OUTPUT: PROFILER] parallel bound took: %f\n", time_sec);
 
 
 /*	while (TACT < TEND)

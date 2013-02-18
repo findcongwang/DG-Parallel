@@ -1,72 +1,108 @@
+[OUTPUT: PROFILER] serial vol took: 0.561384
+[OUTPUT: PROFILER] parallel vol took: 0.353104
+[OUTPUT: PROFILER] serial bound took: 0.653090
+[OUTPUT: PROFILER] parallel bound took: 0.405308
 [OUTPUT: DG-PARALLEL]
 [OUTPUT: DG-PARALLEL] Running on mesh: advection1024.msh
 [OUTPUT: DG-PARALLEL] Number of CPUs online: 4
-[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.070012 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.000555 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.000655 seconds
-[OUTPUT: DG-PARALLEL] Total runtime: 1.739642 seconds
+[OUTPUT: DG-PARALLEL] Number of threads used: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.090974 seconds
+[OUTPUT: DG-PARALLEL] Time spent in RK 0.000000
+[OUTPUT: DG-PARALLEL] Total runtime: 2.127230 seconds
 [OUTPUT: DG-PARALLEL]
+[OUTPUT: PROFILER] serial vol took: 11.334401
+[OUTPUT: PROFILER] parallel vol took: 5.694339
+[OUTPUT: PROFILER] serial bound took: 23.620483
+[OUTPUT: PROFILER] parallel bound took: 10.711364
 [OUTPUT: DG-PARALLEL]
 [OUTPUT: DG-PARALLEL] Running on mesh: advection16384.msh
 [OUTPUT: DG-PARALLEL] Number of CPUs online: 4
-[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 1.644134 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.006711 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.013605 seconds
-[OUTPUT: DG-PARALLEL] Total runtime: 84.949635 seconds
+[OUTPUT: DG-PARALLEL] Number of threads used: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 1.485092 seconds
+[OUTPUT: DG-PARALLEL] Time spent in RK 0.000000
+[OUTPUT: DG-PARALLEL] Total runtime: 53.581796 seconds
 [OUTPUT: DG-PARALLEL]
+[OUTPUT: PROFILER] serial vol took: 0.007458
+[OUTPUT: PROFILER] parallel vol took: 0.075747
+[OUTPUT: PROFILER] serial bound took: 0.007880
+[OUTPUT: PROFILER] parallel bound took: 0.081772
 [OUTPUT: DG-PARALLEL]
 [OUTPUT: DG-PARALLEL] Running on mesh: advection16.msh
 [OUTPUT: DG-PARALLEL] Number of CPUs online: 4
-[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.001181 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.000156 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.000165 seconds
-[OUTPUT: DG-PARALLEL] Total runtime: 0.040781 seconds
+[OUTPUT: DG-PARALLEL] Number of threads used: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.001160 seconds
+[OUTPUT: DG-PARALLEL] Time spent in RK 0.000000
+[OUTPUT: DG-PARALLEL] Total runtime: 0.175207 seconds
 [OUTPUT: DG-PARALLEL]
+[OUTPUT: PROFILER] serial vol took: 0.133805
+[OUTPUT: PROFILER] parallel vol took: 0.174235
+[OUTPUT: PROFILER] serial bound took: 0.135006
+[OUTPUT: PROFILER] parallel bound took: 0.210387
 [OUTPUT: DG-PARALLEL]
 [OUTPUT: DG-PARALLEL] Running on mesh: advection256.msh
 [OUTPUT: DG-PARALLEL] Number of CPUs online: 4
-[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.023555 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.000217 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.000222 seconds
-[OUTPUT: DG-PARALLEL] Total runtime: 0.412494 seconds
+[OUTPUT: DG-PARALLEL] Number of threads used: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.014968 seconds
+[OUTPUT: DG-PARALLEL] Time spent in RK 0.000000
+[OUTPUT: DG-PARALLEL] Total runtime: 0.684820 seconds
 [OUTPUT: DG-PARALLEL]
+[OUTPUT: PROFILER] serial vol took: 0.179926
+[OUTPUT: PROFILER] parallel vol took: 0.139278
+[OUTPUT: PROFILER] serial bound took: 0.279895
+[OUTPUT: PROFILER] parallel bound took: 0.255261
 [OUTPUT: DG-PARALLEL]
 [OUTPUT: DG-PARALLEL] Running on mesh: advection256tr.msh
 [OUTPUT: DG-PARALLEL] Number of CPUs online: 4
-[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.033075 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.000297 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.000419 seconds
-[OUTPUT: DG-PARALLEL] Total runtime: 1.119873 seconds
+[OUTPUT: DG-PARALLEL] Number of threads used: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.040865 seconds
+[OUTPUT: DG-PARALLEL] Time spent in RK 0.000000
+[OUTPUT: DG-PARALLEL] Total runtime: 0.915790 seconds
 [OUTPUT: DG-PARALLEL]
+[OUTPUT: PROFILER] serial vol took: 2.773910
+[OUTPUT: PROFILER] parallel vol took: 1.468575
+[OUTPUT: PROFILER] serial bound took: 5.012083
+[OUTPUT: PROFILER] parallel bound took: 2.325504
 [OUTPUT: DG-PARALLEL]
 [OUTPUT: DG-PARALLEL] Running on mesh: advection4096.msh
 [OUTPUT: DG-PARALLEL] Number of CPUs online: 4
-[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.260432 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.001703 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.002906 seconds
-[OUTPUT: DG-PARALLEL] Total runtime: 11.611459 seconds
+[OUTPUT: DG-PARALLEL] Number of threads used: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.255119 seconds
+[OUTPUT: DG-PARALLEL] Time spent in RK 0.000000
+[OUTPUT: DG-PARALLEL] Total runtime: 12.007606 seconds
 [OUTPUT: DG-PARALLEL]
+[OUTPUT: PROFILER] serial vol took: 0.005155
+[OUTPUT: PROFILER] parallel vol took: 0.170590
+[OUTPUT: PROFILER] serial bound took: 0.005897
+[OUTPUT: PROFILER] parallel bound took: 0.176251
 [OUTPUT: DG-PARALLEL]
 [OUTPUT: DG-PARALLEL] Running on mesh: advection4.msh
 [OUTPUT: DG-PARALLEL] Number of CPUs online: 4
-[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.001187 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.000093 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.000081 seconds
-[OUTPUT: DG-PARALLEL] Total runtime: 0.011193 seconds
+[OUTPUT: DG-PARALLEL] Number of threads used: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.001226 seconds
+[OUTPUT: DG-PARALLEL] Time spent in RK 0.000000
+[OUTPUT: DG-PARALLEL] Total runtime: 0.360510 seconds
 [OUTPUT: DG-PARALLEL]
+[OUTPUT: PROFILER] serial vol took: 0.030179
+[OUTPUT: PROFILER] parallel vol took: 0.127454
+[OUTPUT: PROFILER] serial bound took: 0.042924
+[OUTPUT: PROFILER] parallel bound took: 0.135784
 [OUTPUT: DG-PARALLEL]
 [OUTPUT: DG-PARALLEL] Running on mesh: advection64.msh
 [OUTPUT: DG-PARALLEL] Number of CPUs online: 4
-[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.006110 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.000160 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.000163 seconds
-[OUTPUT: DG-PARALLEL] Total runtime: 0.118897 seconds
+[OUTPUT: DG-PARALLEL] Number of threads used: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.009173 seconds
+[OUTPUT: DG-PARALLEL] Time spent in RK 0.000000
+[OUTPUT: DG-PARALLEL] Total runtime: 0.350538 seconds
 [OUTPUT: DG-PARALLEL]
+[OUTPUT: PROFILER] serial vol took: 0.418646
+[OUTPUT: PROFILER] parallel vol took: 0.307508
+[OUTPUT: PROFILER] serial bound took: 1.158559
+[OUTPUT: PROFILER] parallel bound took: 0.661756
 [OUTPUT: DG-PARALLEL]
 [OUTPUT: DG-PARALLEL] Running on mesh: airfoil2d.msh
 [OUTPUT: DG-PARALLEL] Number of CPUs online: 4
-[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.095188 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: 0.000440 seconds
-[OUTPUT: DG-PARALLEL] Average runtime of computeBoundaryContribution: 0.000942 seconds
-[OUTPUT: DG-PARALLEL] Total runtime: 2.421321 seconds
+[OUTPUT: DG-PARALLEL] Number of threads used: 4
+[OUTPUT: DG-PARALLEL] Runtime of importing mesh: 0.089906 seconds
+[OUTPUT: DG-PARALLEL] Time spent in RK 0.000000
+[OUTPUT: DG-PARALLEL] Total runtime: 2.681133 seconds
 [OUTPUT: DG-PARALLEL]
