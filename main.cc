@@ -222,6 +222,7 @@ int main(int argc, char *argv[])
     printf("[OUTPUT: DG-PARALLEL]\n");
     printf("[OUTPUT: DG-PARALLEL] Running on mesh: %s\n", argv[1]);
     printf("[OUTPUT: DG-PARALLEL] Number of CPUs online: %d\n", numCPU);
+    printf("[OUTPUT: DG-PARALLEL] Number of threads used: %d\n", numThreads);
     printf("[OUTPUT: DG-PARALLEL] Runtime of importing mesh: %f seconds\n", 
             diff(timer1load,timer2load).tv_sec + diff(timer1load,timer2load).tv_nsec * 0.000000001);
     /*printf("[OUTPUT: DG-PARALLEL] Average runtime of computeVolumeContribution: %f seconds\n", 

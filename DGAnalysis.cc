@@ -309,14 +309,175 @@ DGAnalysis::~DGAnalysis ()
 void DGAnalysis::run()
 {
 	int P_ref_counter = 0;
-	double dt;
+	double dt = 0.05;
 	printf("dg running -- final time = %f...\n",TEND);
 	double TOLD = 0.0;
 	double cputime = 0.0;
 	int sizen   = theMesh->size(n);
 	int sizenm1 = theMesh->size(n-1);
 	double error; ExactError(TACT,error); printf("Error in density L1 norm %e\n", error);
-	while (TACT < TEND)
+
+
+	//profiling
+	timespec timer1, timer2;
+	double time_sec;
+	double t;
+	int numTrials = 1000;
+		//volContri serial
+		time_sec = 0;
+		clock_gettime(CLOCK_MONOTONIC, &timer1);
+		for (int i = 0; i < numTrials; ++i)
+		{
+			t = dt * i;
+			mMesh::iter it;
+			const mMesh::iter mesh_begin = theMesh->begin(n);
+			const mMesh::iter mesh_end=theMesh->end(n);
+			for(it = mesh_begin;it != mesh_end;++it)
+			{
+				mEntity *m = (*it);
+				DGCell *cell = (DGCell*)m->getCell();
+				cell->computeVolumeContribution(t);		
+			}
+		}
+		clock_gettime(CLOCK_MONOTONIC, &timer2);
+	    time_sec += diff(timer1,timer2).tv_sec;
+	    time_sec += diff(timer1,timer2).tv_nsec * 0.000000001;
+	    printf("[OUTPUT-PROFILER] serial vol took: %f\n", time_sec);
+
+		//volContri parallel
+		time_sec = 0;
+		clock_gettime(CLOCK_MONOTONIC, &timer1);
+		for (int i = 0; i < numTrials; ++i)
+		{
+			t = dt * i;
+			mMesh::iter it;
+			int rc;
+			void *retval;
+			//fork all but last chunk
+			for (int i = 0; i < numThreads-1; ++i){
+				threadInfo[n][i]._t = t;
+				rc = pthread_create(&threadInfo[n][i]._id, NULL,
+									parallelVolume, &threadInfo[n][i]);
+				if (rc){
+					printf("ERROR: return code from pthread_create() is %d\n", rc);
+					exit(-1);
+				}
+			}
+			//work on last chunk
+			infoWrapper* info = &threadInfo[n][numThreads-1];
+			for(it = info->_begin; it != info->_end; ++it)
+			{
+				mEntity *m = (*it);
+				DGCell *cell = (DGCell*)m->getCell();
+				cell->computeVolumeContribution(t);		
+			}
+			//wait for all threads to finish
+			for (int i = 0; i < numThreads-1; ++i){
+				pthread_join(threadInfo[n][i]._id, &retval);
+			}
+		}
+		clock_gettime(CLOCK_MONOTONIC, &timer2);
+	    time_sec += diff(timer1,timer2).tv_sec;
+	    time_sec += diff(timer1,timer2).tv_nsec * 0.000000001;
+	    printf("[OUTPUT-PROFILER] parallel vol took: %f\n", time_sec);
+
+		//boundContri serial
+		time_sec = 0;
+		clock_gettime(CLOCK_MONOTONIC, &timer1);
+		for (int i = 0; i < numTrials; ++i)
+		{
+			mMesh::iter it;
+			const mMesh::iter  mesh_begin = theMesh->begin(n-1);
+			const mMesh::iter  mesh_end=theMesh->end(n-1);
+			list<DGCell*> setToZero;
+			int notPhysical;
+
+			for(it = mesh_begin;it != mesh_end;++it)
+			{
+			  mEntity *m = (*it);
+			  DGBoundaryCell *cell = (DGBoundaryCell*)m->getCell();
+			  notPhysical = cell->computeBoundaryContributions(t);
+			  if (notPhysical) 
+			{
+			  if (notPhysical==1) setToZero.push_back((DGCell*) cell->getLeftCell());
+			  else if (notPhysical==2) setToZero.push_back((DGCell*) cell->getRightCell());
+			  else 
+			    {
+			      setToZero.push_back((DGCell*) cell->getLeftCell());
+			      setToZero.push_back((DGCell*) cell->getRightCell());
+			    }
+			}
+			}
+
+			list<DGCell*>::const_iterator itt, end_list;
+			for(itt=setToZero.begin(); itt!=setToZero.end(); ++itt)
+			{
+			  //mEntity *m = (*itt);
+			  //DGCell *cell = (DGBoundaryCell*)m->getCell();
+			  (*itt)->setToZero(t);
+			}
+		}
+		clock_gettime(CLOCK_MONOTONIC, &timer2);
+	    time_sec += diff(timer1,timer2).tv_sec;
+	    time_sec += diff(timer1,timer2).tv_nsec * 0.000000001;
+	    printf("[OUTPUT-PROFILER] serial bound took: %f\n", time_sec);	    
+
+	    //boundContri parallel
+		time_sec = 0;
+		clock_gettime(CLOCK_MONOTONIC, &timer1);
+		for (int i = 0; i < numTrials; ++i)
+		{
+		    mMesh::iter it;
+		    int rc;
+		    void *retval;
+		    int notPhysical;
+		    //fork all but last chunk
+		    for (int i = 0; i < numThreads-1; ++i){
+		        threadInfo[n-1][i]._t = t;
+		        rc = pthread_create(&threadInfo[n-1][i]._id, NULL,
+		                            parallelBoundary, &threadInfo[n-1][i]);
+		        if (rc){
+		            printf("ERROR: return code from pthread_create() is %d\n", rc);
+		            exit(-1);
+		        }
+		    }
+		    //work on last chunk
+		    infoWrapper* info = &threadInfo[n-1][numThreads-1];
+		    for(it = info->_begin; it != info->_end; ++it)
+		    {
+		        mEntity *m = (*it);
+		        DGBoundaryCell *cell = (DGBoundaryCell*)m->getCell();
+		        notPhysical = cell->computeBoundaryContributions(info->_t);
+
+		        switch(notPhysical)
+		        {
+		        case 0:
+		            //nothing to do
+		            break;
+		        case 1:
+		            cell->getLeftCell()->setToZero(info->_t);
+		            break;
+		        case 2:
+		            cell->getRightCell()->setToZero(info->_t);
+		            break;
+		        default:
+		            cell->getLeftCell()->setToZero(info->_t);
+		            cell->getRightCell()->setToZero(info->_t);
+		            break;
+		        }
+		    }
+		    //wait for all threads to finish
+		    for (int i = 0; i < numThreads-1; ++i){
+		        pthread_join(threadInfo[n-1][i]._id, &retval);
+		    }
+		}
+		clock_gettime(CLOCK_MONOTONIC, &timer2);
+	    time_sec += diff(timer1,timer2).tv_sec;
+	    time_sec += diff(timer1,timer2).tv_nsec * 0.000000001;
+	    printf("[OUTPUT-PROFILER] parallel bound took: %f\n", time_sec);
+
+
+/*	while (TACT < TEND)
 	{
 		clock_t t1 = clock();
 		if(HREF && TACT - TOLD > REF_SAMPLING_TIME)
@@ -327,11 +488,7 @@ void DGAnalysis::run()
 			sizen   = theMesh->size(n);
 			sizenm1 = theMesh->size(n-1);
 		}
-		/*  if(PREF && TACT - TOLD > REF_SAMPLING_TIME)
-		{
-		TOLD = TACT;
-		adaptP();
-		}*/
+
 		if(PREF && P_ref_counter>9)
 		{
 			adaptP();
@@ -350,258 +507,243 @@ void DGAnalysis::run()
 		void *retval;
 		infoWrapper* info;
       
-    switch(timeSteppingMode)
-	{
-	case 0:
-
-	    //fork all but last chunk
-	    for (int i = 0; i < numThreads-1; ++i){
-	        threadInfo[n][i]._t = CFLMAX;
-	        threadInfo[n][i]._moreinfo = &dt;
-	        rc = pthread_create(&threadInfo[n][i]._id, NULL,
-	                            parallelAdaptTimeStep, &threadInfo[n][i]);
-	        if (rc){
-	            printf("ERROR: return code from pthread_create() is %d\n", rc);
-	            exit(-1);
-	        }
-	    }
-	    //work on last chunk
-	    info = &threadInfo[n][numThreads-1];
-	    for(it = info->_begin; it != info->_end; ++it)
-	    {
-	        mEntity *m = (*it);
-	        DGCell *cell = (DGCell*)m->getCell();
-	 		cell->adaptTimeStep(CFLMAX,dt);
-	    }
-	    //wait for all threads to finish
-	    for (int i = 0; i < numThreads-1; ++i){
-	        pthread_join(threadInfo[n][i]._id, &retval);
-	    }
-	    //keep smallest info->_t (dt)
-	    for (int i = 0; i < numThreads-1; ++i){
-	        if(dt > threadInfo[n][i]._t) dt = threadInfo[n][i]._t;
-	    }
-
-		/*for(it = theMesh->begin(n);it != mesh_end;++it)
+	    switch(timeSteppingMode)
 		{
-			mEntity *m = (*it);
-			DGCell *cell = (DGCell*)m->getCell();
-			cell->adaptTimeStep(CFLMAX,dt);
-		} */
+		case 0:
 
-	  N = (ceil)((TEND-TACT)/dt);
-          dt = (double)(TEND-TACT)/(N);
-	  for(it = theMesh->begin(n);it != mesh_end;++it)
-	    {
-	      DGCell *cell = (DGCell*)(*it)->getCell();
-	      cell->setTimeStep(dt);
-	    }
-	  break;
-	case 1:
-	  dt=500000.;
-	  for(it = theMesh->begin(n);it != mesh_end;++it)
-	    {
-	      mEntity *m = (*it);
-	      DGCell *cell = (DGCell*)m->getCell();
-	      cell->computeTimeStep(CFLMAX);
-	      double tmp = cell->getTimeStep();
-		  if (tmp<dt) dt=tmp;
-	    }
-	  break;
-	case 2:
+		    //fork all but last chunk
+		    for (int i = 0; i < numThreads-1; ++i){
+		        threadInfo[n][i]._t = CFLMAX;
+		        threadInfo[n][i]._moreinfo = &dt;
+		        rc = pthread_create(&threadInfo[n][i]._id, NULL,
+		                            parallelAdaptTimeStep, &threadInfo[n][i]);
+		        if (rc){
+		            printf("ERROR: return code from pthread_create() is %d\n", rc);
+		            exit(-1);
+		        }
+		    }
+		    //work on last chunk
+		    info = &threadInfo[n][numThreads-1];
+		    for(it = info->_begin; it != info->_end; ++it)
+		    {
+		        mEntity *m = (*it);
+		        DGCell *cell = (DGCell*)m->getCell();
+		 		cell->adaptTimeStep(CFLMAX,dt);
+		    }
+		    //wait for all threads to finish
+		    for (int i = 0; i < numThreads-1; ++i){
+		        pthread_join(threadInfo[n][i]._id, &retval);
+		    }
+		    //keep smallest info->_t (dt)
+		    for (int i = 0; i < numThreads-1; ++i){
+		        if(dt > threadInfo[n][i]._t) dt = threadInfo[n][i]._t;
+		    }
 
+		  N = (ceil)((TEND-TACT)/dt);
+	          dt = (double)(TEND-TACT)/(N);
+		  for(it = theMesh->begin(n);it != mesh_end;++it)
+		    {
+		      DGCell *cell = (DGCell*)(*it)->getCell();
+		      cell->setTimeStep(dt);
+		    }
+		  break;
+		case 1:
+		  dt=500000.;
+		  for(it = theMesh->begin(n);it != mesh_end;++it)
+		    {
+		      mEntity *m = (*it);
+		      DGCell *cell = (DGCell*)m->getCell();
+		      cell->computeTimeStep(CFLMAX);
+		      double tmp = cell->getTimeStep();
+			  if (tmp<dt) dt=tmp;
+		    }
+		  break;
+		case 2:
+		    //fork all but last chunk
+		    for (int i = 0; i < numThreads-1; ++i){
+		        threadInfo[n][i]._t = CFLMAX;
+		        threadInfo[n][i]._moreinfo = &dt;
+		        rc = pthread_create(&threadInfo[n][i]._id, NULL,
+		                            parallelAdaptTimeStep, &threadInfo[n][i]);
+		        if (rc){
+		            printf("ERROR: return code from pthread_create() is %d\n", rc);
+		            exit(-1);
+		        }
+		    }
+		    //work on last chunk
+		    info = &threadInfo[n][numThreads-1];
+		    for(it = info->_begin; it != info->_end; ++it)
+		    {
+		        mEntity *m = (*it);
+		        DGCell *cell = (DGCell*)m->getCell();
+		 		cell->adaptTimeStep(CFLMAX,dt);
+		    }
+		    //wait for all threads to finish
+		    for (int i = 0; i < numThreads-1; ++i){
+		        pthread_join(threadInfo[n][i]._id, &retval);
+		    }
+		    //keep smallest info->_t (dt)
+		    for (int i = 0; i < numThreads; ++i){
+		        if(dt > threadInfo[n][i]._t) dt = threadInfo[n][i]._t;
+		    }
 
-	    //fork all but last chunk
-	    for (int i = 0; i < numThreads-1; ++i){
-	        threadInfo[n][i]._t = CFLMAX;
-	        threadInfo[n][i]._moreinfo = &dt;
-	        rc = pthread_create(&threadInfo[n][i]._id, NULL,
-	                            parallelAdaptTimeStep, &threadInfo[n][i]);
-	        if (rc){
-	            printf("ERROR: return code from pthread_create() is %d\n", rc);
-	            exit(-1);
-	        }
-	    }
-	    //work on last chunk
-	    info = &threadInfo[n][numThreads-1];
-	    for(it = info->_begin; it != info->_end; ++it)
-	    {
-	        mEntity *m = (*it);
-	        DGCell *cell = (DGCell*)m->getCell();
-	 		cell->adaptTimeStep(CFLMAX,dt);
-	    }
-	    //wait for all threads to finish
-	    for (int i = 0; i < numThreads-1; ++i){
-	        pthread_join(threadInfo[n][i]._id, &retval);
-	    }
-	    //keep smallest info->_t (dt)
-	    for (int i = 0; i < numThreads; ++i){
-	        if(dt > threadInfo[n][i]._t) dt = threadInfo[n][i]._t;
-	    }
-
-/*		for(it = theMesh->begin(n);it != mesh_end;++it)
+		  dt *=pow(2.,theMesh->getNbBins()-1); 
+		  N = (ceil)((TEND-TACT)/dt);
+	          dt = (double)(TEND-TACT)/(N);
+		  
+		  for(it = theMesh->begin(n);it != mesh_end;++it)
+		    {
+		      DGCell *cell = (DGCell*)(*it)->getCell();
+		      cell->setTimeStep(dt);
+		    }
+		  break;
+		case 3:
+		   for(it = theMesh->begin(n);it != mesh_end;++it)
+		    {
+		      mEntity *m = (*it);
+		      DGCell *cell = (DGCell*)m->getCell();
+		      cell->adaptTimeStep(CFLMAX,dt);
+		    }
+		  N = (ceil)((TEND-TACT)/(dt));
+	          dt = (double)(TEND-TACT)/(N);
+		  for(it = theMesh->begin(n);it != mesh_end;++it)
+		    {
+		      DGCell *cell = (DGCell*)(*it)->getCell();
+		      cell->setTimeStep(dt);
+		    }
+		  
+		   dt=500000.;
+		   
+		  for(it = theMesh->begin(n);it != mesh_end;++it)
+		    {
+		      mEntity *m = (*it);
+		      DGCell *cell = (DGCell*)m->getCell();
+		      cell->computeTimeStep(CFLMAX);
+		      double tmp = cell->getTimeStep();
+			  if (tmp<dt) dt=tmp;
+		    }
+			
+		  break;
+		}
+	      
+	      // SOLVE AND ADVANCE IN TIME ---------------------------
+	      // THEN LIMIT ------------------------------------------
+	      double resid = 0.0;
+	      double residError = 0.0;
+	      
+	      resid = theIntegrator->advanceInTime(TACT, dt);
+	      // if(theError>0) theError->error(cell);
+	      
+	      //computeMyError();
+	      // evaluate all sensors that user has defined
+	      //  double em, eM; computeError(eM,em)
+	      //computeBoundaryIntegral(BI); printf("Boundary Integral %e\n",BI);
+	      
+	      //residError = 0;	
+	      
+	      if (compute_Linf_error) {
+		double error;
+			  LinfError(TACT+dt,error);
+			  printf("Error in density Linf norm %e\n", error);
+	      }
+	      if (compute_density_errorL1) {
+		double exactError;
+			  ExactError(TACT+dt,exactError);
+			  printf("Error in density L1 norm %e\n", exactError);
+	      }
+	      if (compute_density_errorL2) {
+		double exactError;
+		densityErrorL2(TACT+dt,exactError);
+		printf("Error in density L2 norm %e\n", exactError);
+		  }
+	      if (compute_entropy_errorL1) {
+		double entropyError;
+		entropyErrorL1(TACT+dt,entropyError); 
+		printf(" Entropy error in L1 norm %e\n", entropyError);
+	      }
+	      if (compute_entropy_errorL2) {
+		double entropyError;
+		entropyErrorL2(TACT+dt,entropyError); 
+		printf(" Entropy error in L2 norm %e\n", entropyError);
+	      }
+	      if (compute_pressure_error) { 
+		double pressureError;
+		PressureError(TACT+dt,pressureError); 
+		printf(" Pressure error in L1 norm %e\n", pressureError);
+	      }
+	      if (compute_pressure_errorL2) {
+		double pressureError;
+		pressureErrorL2(TACT+dt,pressureError);
+		printf(" Pressure error in L2 norm %e\n", pressureError);
+	      }
+	      if (compute_total_pressure) {
+		double BP;
+		computeTotalPressure(BP);
+		printf(" Boundary Pressure %e\n", BP);
+	      }
+	      if (compute_total_mass_loss) {
+		double totalMassLoss;
+		computeTotalMassLoss(totalMassLoss);
+		printf("Total Mass Loss % e\n",totalMassLoss); 
+	      }
+	      if (compute_exact_total_pressure) {
+		double EBP;
+		computeExactTotalPressure(EBP);
+		printf(" Exact total Pressure %e\n", EBP);
+	      }
+	      if (compute_lift_drag_coeffs) { 
+		double C_l,C_d;
+		computeLiftDragCoeffs(C_l,C_d);
+		printf("lift coeff = %e, drag coeff = %e \n", C_l,C_d);     
+	      }
+	      if (plot_pressure_coefficient) plotPressureCoefficient();
+	      if (plot_mach_on_surface) plotMachOnSurface();
+	      if (plot_pressure_loss_coefficient) plotPressureLossCoefficient();
+	      if (plot_entropy_on_surface) plotEntropyOnSurface();	  
+	      TACT += dt/1.;
+	      evalSensors();
+	      //exit(0);
+	      ITER++;
+	      clock_t t2 = clock();
+	      double cpu_t = (double)(t2-t1)/CLOCKS_PER_SEC;
+	      cputime += cpu_t;
+	      
+	      printf("%d %d iter %6d dt %12.5E T %12.5E ||rhs|| =  %12.5E ||Erhs|| =%12.5E cpu %12.5E cpu(ts) = %12.5E cpuleft = %12.5E\n",sizen,sizenm1,ITER,dt,TACT,sqrt(resid),sqrt(residError),cputime,cpu_t,cpu_t*(TEND-TACT)/dt);
+	      //     FILE *myLog = fopen("DG.log","a");
+	      //fprintf(myLog,"%d %d iter %6d dt %12.5E T %12.5E ||rhs|| =  %12.5E ||Erhs|| =%12.5E cpu %12.5E cpu(ts) = %12.5E cpuleft = %12.5E\n",sizen,sizenm1,ITER,dt,TACT,sqrt(resid),sqrt(residError),cputime,cpu_t,cpu_t*(TEND-TACT)/dt);
+	      //fclose(myLog);
+	      //      if (sqrt(resid)<1.0e-10) break;  
+	      if(!(ITER % steps_to_dump))   //WRITE DATA TO A FILE
 		{
-			mEntity *m = (*it);
-			DGCell *cell = (DGCell*)m->getCell();
-			cell->adaptTimeStep(CFLMAX,dt);
-		} */
-	  dt *=pow(2.,theMesh->getNbBins()-1); 
-	  N = (ceil)((TEND-TACT)/dt);
-          dt = (double)(TEND-TACT)/(N);
-	  
-	  for(it = theMesh->begin(n);it != mesh_end;++it)
-	    {
-	      DGCell *cell = (DGCell*)(*it)->getCell();
-	      cell->setTimeStep(dt);
-	    }
-	  break;
-	case 3:
-	/* for(it = theMesh->begin(n);it != mesh_end;++it)
-	    {
-	      mEntity *m = (*it);
-	      DGCell *cell = (DGCell*)m->getCell();
-	      cell->adaptTimeStep(CFLMAX,dt);
-	    }
-	  N = (ceil)((TEND-TACT)/(dt));
-          dt = (double)(TEND-TACT)/(N);
-	  for(it = theMesh->begin(n);it != mesh_end;++it)
-	    {
-	      DGCell *cell = (DGCell*)(*it)->getCell();
-	      cell->setTimeStep(dt);
-	    }
-	  */
-	   dt=500000.;
-	   
-	  for(it = theMesh->begin(n);it != mesh_end;++it)
-	    {
-	      mEntity *m = (*it);
-	      DGCell *cell = (DGCell*)m->getCell();
-	      cell->computeTimeStep(CFLMAX);
-	      double tmp = cell->getTimeStep();
-		  if (tmp<dt) dt=tmp;
-	    }
-		
-	  break;
-	}
-      
-      // SOLVE AND ADVANCE IN TIME ---------------------------
-      // THEN LIMIT ------------------------------------------
-      double resid = 0.0;
-      double residError = 0.0;
-      
-      resid = theIntegrator->advanceInTime(TACT, dt);
-      // if(theError>0) theError->error(cell);
-      
-      //computeMyError();
-      // evaluate all sensors that user has defined
-      //  double em, eM; computeError(eM,em)
-      //computeBoundaryIntegral(BI); printf("Boundary Integral %e\n",BI);
-      
-      //residError = 0;	
-      
-      if (compute_Linf_error) {
-	double error;
-		  LinfError(TACT+dt,error);
-		  printf("Error in density Linf norm %e\n", error);
-      }
-      if (compute_density_errorL1) {
-	double exactError;
-		  ExactError(TACT+dt,exactError);
-		  printf("Error in density L1 norm %e\n", exactError);
-      }
-      if (compute_density_errorL2) {
-	double exactError;
-	densityErrorL2(TACT+dt,exactError);
-	printf("Error in density L2 norm %e\n", exactError);
-	  }
-      if (compute_entropy_errorL1) {
-	double entropyError;
-	entropyErrorL1(TACT+dt,entropyError); 
-	printf(" Entropy error in L1 norm %e\n", entropyError);
-      }
-      if (compute_entropy_errorL2) {
-	double entropyError;
-	entropyErrorL2(TACT+dt,entropyError); 
-	printf(" Entropy error in L2 norm %e\n", entropyError);
-      }
-      if (compute_pressure_error) { 
-	double pressureError;
-	PressureError(TACT+dt,pressureError); 
-	printf(" Pressure error in L1 norm %e\n", pressureError);
-      }
-      if (compute_pressure_errorL2) {
-	double pressureError;
-	pressureErrorL2(TACT+dt,pressureError);
-	printf(" Pressure error in L2 norm %e\n", pressureError);
-      }
-      if (compute_total_pressure) {
-	double BP;
-	computeTotalPressure(BP);
-	printf(" Boundary Pressure %e\n", BP);
-      }
-      if (compute_total_mass_loss) {
-	double totalMassLoss;
-	computeTotalMassLoss(totalMassLoss);
-	printf("Total Mass Loss % e\n",totalMassLoss); 
-      }
-      if (compute_exact_total_pressure) {
-	double EBP;
-	computeExactTotalPressure(EBP);
-	printf(" Exact total Pressure %e\n", EBP);
-      }
-      if (compute_lift_drag_coeffs) { 
-	double C_l,C_d;
-	computeLiftDragCoeffs(C_l,C_d);
-	printf("lift coeff = %e, drag coeff = %e \n", C_l,C_d);     
-      }
-      if (plot_pressure_coefficient) plotPressureCoefficient();
-      if (plot_mach_on_surface) plotMachOnSurface();
-      if (plot_pressure_loss_coefficient) plotPressureLossCoefficient();
-      if (plot_entropy_on_surface) plotEntropyOnSurface();	  
-      TACT += dt/1.;
-      evalSensors();
-      //exit(0);
-      ITER++;
-      clock_t t2 = clock();
-      double cpu_t = (double)(t2-t1)/CLOCKS_PER_SEC;
-      cputime += cpu_t;
-      
-      printf("%d %d iter %6d dt %12.5E T %12.5E ||rhs|| =  %12.5E ||Erhs|| =%12.5E cpu %12.5E cpu(ts) = %12.5E cpuleft = %12.5E\n",sizen,sizenm1,ITER,dt,TACT,sqrt(resid),sqrt(residError),cputime,cpu_t,cpu_t*(TEND-TACT)/dt);
-      //     FILE *myLog = fopen("DG.log","a");
-      //fprintf(myLog,"%d %d iter %6d dt %12.5E T %12.5E ||rhs|| =  %12.5E ||Erhs|| =%12.5E cpu %12.5E cpu(ts) = %12.5E cpuleft = %12.5E\n",sizen,sizenm1,ITER,dt,TACT,sqrt(resid),sqrt(residError),cputime,cpu_t,cpu_t*(TEND-TACT)/dt);
-      //fclose(myLog);
-      //      if (sqrt(resid)<1.0e-10) break;  
-      if(!(ITER % steps_to_dump))   //WRITE DATA TO A FILE
-	{
-	  char recov[256],mesh[256];
-	  sprintf(recov,"dg-recov-%d.dat",ITER);
-	  sprintf(mesh,"mesh-recov-%d.msh",ITER);
-	  ofstream data(recov);
-	  ofstream m(mesh);
-	  write(m,data);
-	  // then write infos about the actual state
-	  //par->write(ofs);
-	  data.close();
-	  m.close();
-	}
+		  char recov[256],mesh[256];
+		  sprintf(recov,"dg-recov-%d.dat",ITER);
+		  sprintf(mesh,"mesh-recov-%d.msh",ITER);
+		  ofstream data(recov);
+		  ofstream m(mesh);
+		  write(m,data);
+		  // then write infos about the actual state
+		  //par->write(ofs);
+		  data.close();
+		  m.close();
+		}
       //ApproxError(approxError);
       //computeBoundaryIntegral();
-    } 
-  //WRITE SOLUTION AT FINAL TIME TO FILE
-  char recov[256],mesh[256];
-  sprintf(recov,"final-solution.dat");
-  sprintf(mesh,"final-mesh.msh");
-  ofstream data(recov);
-  ofstream m(mesh);
-  write(m,data);
-  // then write infos about the actual state
-  //par->write(ofs);
-  data.close();
-  m.close();
-  
-  ExactError(TACT,error);
-  // evalSensors();
-  printf(" Exact error %e \n", error); 
+    } */
+	//WRITE SOLUTION AT FINAL TIME TO FILE
+	char recov[256],mesh[256];
+	sprintf(recov,"final-solution.dat");
+	sprintf(mesh,"final-mesh.msh");
+	ofstream data(recov);
+	ofstream m(mesh);
+	write(m,data);
+	// then write infos about the actual state
+	//par->write(ofs);
+	data.close();
+	m.close();
+
+	ExactError(TACT,error);
+	// evalSensors();
+	printf(" Exact error %e \n", error); 
 }
 
 void DGAnalysis::sortCellsBySize()
