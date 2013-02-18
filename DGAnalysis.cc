@@ -322,7 +322,7 @@ void DGAnalysis::run()
 	timespec timer1, timer2;
 	double time_sec;
 	double t;
-	int numTrials = 1000;
+	int numTrials = 10000;
 		//volContri serial
 		time_sec = 0;
 		clock_gettime(CLOCK_MONOTONIC, &timer1);
